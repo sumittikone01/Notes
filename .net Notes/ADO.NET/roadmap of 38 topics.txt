@@ -1,0 +1,60 @@
+Phase 1: ADO.NET Core Fundamentals
+
+What is ADO.NET — architecture, providers, and how it fits into ASP.NET Core
+Namespaces and key classes overview (System.Data, System.Data.SqlClient / Microsoft.Data.SqlClient)
+SqlConnection — connection strings, opening/closing, using block best practices
+SqlCommand — CommandType.Text vs CommandType.StoredProcedure, parameters
+SqlParameter — adding parameters safely (preventing SQL injection)
+ExecuteNonQuery — INSERT, UPDATE, DELETE operations
+ExecuteScalar — fetching single values
+ExecuteReader and SqlDataReader — reading data row by row
+SqlDataAdapter — filling DataTable and DataSet
+DataTable and DataSet — working with in-memory data
+
+
+Phase 2: Intermediate ADO.NET
+
+Stored Procedures with ADO.NET — calling SP with input/output parameters
+Transactions — SqlTransaction, commit, rollback, savepoints
+Connection Pooling — how it works, configuration, best practices
+Handling NULL values from database (DBNull.Value)
+Error handling with ADO.NET — SqlException, try/catch patterns
+Configuring Connection String in appsettings.json and reading via IConfiguration
+
+
+Phase 3: ADO.NET in ASP.NET Core MVC Architecture
+
+Repository Pattern with ADO.NET — separating data access from controllers
+Dependency Injection — injecting repository/service into controllers
+Returning data from Repository to Controller to View
+Mapping DataTable / SqlDataReader to Model/DTO classes
+Generic helper class for ADO.NET (reusable DBHelper / DataAccess class)
+
+
+Phase 4: ADO.NET with AJAX and JSON
+
+Returning JSON from Controller (JsonResult, IActionResult)
+AJAX GET request — fetching data from controller and binding to UI
+AJAX POST request — sending form/model data to controller via JSON
+Passing complex objects (models/lists) via AJAX + JSON
+Handling AJAX responses — success, error, loading states
+
+
+Phase 5: ADO.NET with Kendo UI
+
+Kendo Grid with remote data — AJAX read from ADO.NET controller action
+Kendo Grid CRUD — create, update, destroy bound to ADO.NET SP/queries
+Kendo DataSource — configuring transport, schema, pagination server-side
+Server-side paging, sorting, filtering with ADO.NET
+Kendo DropDownList, ComboBox — populating from ADO.NET database call
+Kendo Form — binding and submitting data through ADO.NET
+
+
+Phase 6: Advanced & Best Practices
+
+Async ADO.NET — OpenAsync, ExecuteReaderAsync, ExecuteNonQueryAsync
+Bulk Insert with ADO.NET — SqlBulkCopy
+Multiple result sets with SqlDataReader (NextResult())
+Unit of Work pattern with ADO.NET
+Security best practices — parameterized queries, least privilege DB user
+Performance tips — minimizing open connections, proper disposal, avoiding DataSet when not needed
