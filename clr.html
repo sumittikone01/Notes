@@ -1,0 +1,537 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>CLR & .NET Runtime — .NET Notes</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=IBM+Plex+Mono:ital,wght@0,400;0,500;1,400&family=Inter:wght@300;400;500&display=swap" rel="stylesheet"/>
+<style>
+  :root {
+    --bg: #08090e; --bg2: #0f1018; --bg3: #151620;
+    --border: rgba(255,255,255,0.07);
+    --accent: #00d4ff; --accent-dim: rgba(0,212,255,0.08);
+    --accent2: #39e09b;
+    --text: #e8e9f0; --text-muted: #6b6e85; --text-dim: #9698aa;
+    --code-bg: #0d0e16; --code-border: rgba(0,212,255,0.15);
+    --sidebar-w: 260px;
+  }
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  html { scroll-behavior: smooth; }
+  body { background: var(--bg); color: var(--text); font-family: 'Inter', sans-serif; font-weight: 300; line-height: 1.7; }
+  body::before { content: ''; position: fixed; inset: 0; background-image: linear-gradient(rgba(0,212,255,0.02) 1px, transparent 1px), linear-gradient(90deg, rgba(0,212,255,0.02) 1px, transparent 1px); background-size: 40px 40px; pointer-events: none; z-index: 0; }
+  .orb { position: fixed; border-radius: 50%; filter: blur(100px); pointer-events: none; z-index: 0; }
+  .orb1 { width: 600px; height: 600px; background: rgba(0,212,255,0.05); top: -200px; right: -150px; }
+  .orb2 { width: 400px; height: 400px; background: rgba(57,224,155,0.04); bottom: 0; left: -100px; }
+  nav { position: fixed; top: 0; left: 0; right: 0; z-index: 200; height: 60px; display: flex; align-items: center; padding: 0 24px; gap: 12px; background: rgba(8,9,14,0.9); backdrop-filter: blur(20px); border-bottom: 1px solid var(--border); }
+  .nav-back { display: flex; align-items: center; gap: 6px; font-family: 'IBM Plex Mono', monospace; font-size: 0.72rem; color: var(--text-muted); text-decoration: none; padding: 5px 10px; border-radius: 6px; border: 1px solid var(--border); transition: all 0.2s; }
+  .nav-back:hover { color: var(--accent); border-color: var(--accent); }
+  .nav-sep { color: var(--border); }
+  .nav-title { font-family: 'Syne', sans-serif; font-weight: 700; font-size: 0.9rem; }
+  .nav-badge { margin-left: auto; font-family: 'IBM Plex Mono', monospace; font-size: 0.65rem; letter-spacing: 0.1em; color: var(--accent); background: var(--accent-dim); border: 1px solid rgba(0,212,255,0.2); padding: 3px 10px; border-radius: 12px; }
+  .nav-topics { display: flex; gap: 4px; margin-left: 16px; }
+  .nav-topic { font-family: 'IBM Plex Mono', monospace; font-size: 0.65rem; padding: 4px 9px; border-radius: 5px; color: var(--text-muted); text-decoration: none; border: 1px solid transparent; transition: all 0.2s; }
+  .nav-topic:hover { color: var(--text); border-color: var(--border); }
+  .nav-topic.active { color: var(--accent); border-color: rgba(0,212,255,0.3); background: var(--accent-dim); }
+  .layout { position: relative; z-index: 1; display: flex; padding-top: 60px; min-height: 100vh; }
+  .sidebar { position: fixed; top: 60px; left: 0; bottom: 0; width: var(--sidebar-w); overflow-y: auto; padding: 28px 0; border-right: 1px solid var(--border); background: var(--bg); scrollbar-width: none; }
+  .sidebar::-webkit-scrollbar { display: none; }
+  .sidebar-section { padding: 0 16px; margin-bottom: 24px; }
+  .sidebar-label { font-family: 'IBM Plex Mono', monospace; font-size: 0.6rem; letter-spacing: 0.18em; text-transform: uppercase; color: var(--text-muted); padding: 0 8px; margin-bottom: 8px; }
+  .sidebar-link { display: flex; align-items: center; gap: 8px; padding: 7px 8px; border-radius: 6px; font-size: 0.82rem; color: var(--text-muted); text-decoration: none; transition: all 0.18s; }
+  .sidebar-link:hover { color: var(--text); background: rgba(255,255,255,0.04); }
+  .sidebar-link.active { color: var(--accent); background: var(--accent-dim); }
+  .sidebar-link .dot { width: 5px; height: 5px; border-radius: 50%; background: currentColor; flex-shrink: 0; opacity: 0.6; }
+  .main { margin-left: var(--sidebar-w); flex: 1; max-width: 860px; padding: 56px 64px 120px; }
+  .page-header { margin-bottom: 64px; padding-bottom: 40px; border-bottom: 1px solid var(--border); }
+  .page-crumb { font-family: 'IBM Plex Mono', monospace; font-size: 0.68rem; color: var(--text-muted); letter-spacing: 0.1em; margin-bottom: 16px; }
+  .page-crumb span { color: var(--accent); }
+  .page-title { font-family: 'Syne', sans-serif; font-weight: 800; font-size: 3rem; letter-spacing: -0.04em; line-height: 1; margin-bottom: 16px; }
+  .page-title .hi { color: var(--text); }
+  .page-title .lo { background: linear-gradient(135deg, var(--accent), var(--accent2)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+  .page-desc { font-size: 0.95rem; color: var(--text-muted); max-width: 500px; line-height: 1.7; }
+  .section { margin-bottom: 72px; }
+  h2.sec-title { font-family: 'Syne', sans-serif; font-weight: 700; font-size: 1.5rem; letter-spacing: -0.02em; color: var(--text); margin-bottom: 20px; display: flex; align-items: center; gap: 12px; }
+  h2.sec-title::before { content: ''; display: block; width: 4px; height: 22px; background: var(--accent); border-radius: 2px; flex-shrink: 0; }
+  h3.sub-title { font-family: 'Syne', sans-serif; font-weight: 600; font-size: 1.1rem; color: var(--text-dim); margin: 28px 0 14px; letter-spacing: -0.01em; }
+  p { margin-bottom: 14px; color: var(--text-dim); font-size: 0.93rem; }
+  p strong { color: var(--text); font-weight: 500; }
+  .code-block { position: relative; background: var(--code-bg); border: 1px solid var(--code-border); border-radius: 10px; margin: 20px 0; overflow: hidden; }
+  .code-header { display: flex; align-items: center; padding: 10px 16px; border-bottom: 1px solid var(--code-border); background: rgba(0,212,255,0.03); gap: 8px; }
+  .code-dots { display: flex; gap: 5px; }
+  .code-dot { width: 10px; height: 10px; border-radius: 50%; }
+  .code-dot.r { background: #ff5f57; } .code-dot.y { background: #ffbd2e; } .code-dot.g { background: #27c93f; }
+  .code-lang { font-family: 'IBM Plex Mono', monospace; font-size: 0.65rem; letter-spacing: 0.1em; color: var(--accent); margin-left: auto; text-transform: uppercase; }
+  pre { padding: 20px; overflow-x: auto; font-family: 'IBM Plex Mono', monospace; font-size: 0.82rem; line-height: 1.65; color: #cdd6f4; }
+  .kw { color: #cba6f7; } .cl { color: #89dceb; } .fn { color: #89b4fa; }
+  .st { color: #a6e3a1; } .cm { color: #585b70; font-style: italic; }
+  .nm { color: #fab387; } .ac { color: #f38ba8; }
+  code { font-family: 'IBM Plex Mono', monospace; font-size: 0.8em; background: rgba(0,212,255,0.08); border: 1px solid rgba(0,212,255,0.15); padding: 1px 6px; border-radius: 4px; color: var(--accent); }
+  .callout { border-radius: 10px; padding: 18px 20px; margin: 20px 0; border-left: 3px solid; font-size: 0.875rem; line-height: 1.65; }
+  .callout p { margin: 0; font-size: inherit; }
+  .callout-note { background: rgba(0,212,255,0.05); border-color: var(--accent); color: #7090a0; }
+  .callout-note strong { color: var(--accent); }
+  .callout-tip { background: rgba(57,224,155,0.06); border-color: #39e09b; color: #7a9a8a; }
+  .callout-tip strong { color: #39e09b; }
+  .callout-warn { background: rgba(255,189,68,0.06); border-color: #ffc060; color: #a09070; }
+  .callout-warn strong { color: #ffc060; }
+  .tbl-wrap { overflow-x: auto; margin: 20px 0; border-radius: 10px; border: 1px solid var(--border); }
+  table { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
+  thead tr { background: var(--bg3); }
+  th { font-family: 'IBM Plex Mono', monospace; font-size: 0.7rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--text-muted); padding: 12px 16px; text-align: left; font-weight: 500; border-bottom: 1px solid var(--border); }
+  td { padding: 11px 16px; color: var(--text-dim); border-bottom: 1px solid var(--border); vertical-align: top; }
+  tr:last-child td { border-bottom: none; }
+  tr:hover td { background: rgba(255,255,255,0.02); }
+  td code { font-size: 0.78em; }
+  .yes { color: #39e09b; font-weight: 500; } .no { color: #f38ba8; font-weight: 500; }
+  .flow { background: var(--code-bg); border: 1px solid var(--code-border); border-radius: 10px; padding: 24px; margin: 20px 0; font-family: 'IBM Plex Mono', monospace; font-size: 0.78rem; line-height: 2; color: #cdd6f4; overflow-x: auto; }
+  .flow-box { color: #89b4fa; } .flow-arrow { color: var(--accent); } .flow-note { color: #585b70; font-style: italic; }
+  .component-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin: 20px 0; }
+  .comp-card { background: var(--bg2); border: 1px solid var(--border); border-radius: 10px; padding: 18px; transition: border-color 0.2s; }
+  .comp-card:hover { border-color: var(--accent); }
+  .comp-name { font-family: 'IBM Plex Mono', monospace; font-size: 0.75rem; color: var(--accent); font-weight: 500; margin-bottom: 6px; letter-spacing: 0.05em; }
+  .comp-desc { font-size: 0.78rem; color: var(--text-muted); line-height: 1.5; }
+  hr { border: none; border-top: 1px solid var(--border); margin: 48px 0; }
+  @media (max-width: 900px) { .sidebar { display: none; } .main { margin-left: 0; padding: 40px 24px 80px; } .component-grid { grid-template-columns: 1fr 1fr; } }
+  @media (max-width: 500px) { .component-grid { grid-template-columns: 1fr; } }
+</style>
+</head>
+<body>
+<div class="orb orb1"></div>
+<div class="orb orb2"></div>
+
+<nav>
+  <a class="nav-back" href="index.html">← Home</a>
+  <span class="nav-sep">/</span>
+  <span class="nav-title">CLR &amp; .NET Runtime</span>
+  <div class="nav-topics">
+    <a class="nav-topic active" href="clr.html">CLR</a>
+    <a class="nav-topic" href="oops.html">OOP</a>
+    <a class="nav-topic" href="exception-handling.html">Exceptions</a>
+    <a class="nav-topic" href="collection.html">Collections</a>
+  </div>
+  <div class="nav-badge">C# / .NET</div>
+</nav>
+
+<div class="layout">
+  <aside class="sidebar">
+    <div class="sidebar-section">
+      <div class="sidebar-label">// On This Page</div>
+      <a class="sidebar-link active" href="#what-is-clr"><span class="dot"></span>What is the CLR?</a>
+      <a class="sidebar-link" href="#dotnet-arch"><span class="dot"></span>.NET Architecture</a>
+      <a class="sidebar-link" href="#code-execution"><span class="dot"></span>Code Execution Flow</a>
+      <a class="sidebar-link" href="#msil"><span class="dot"></span>MSIL / CIL</a>
+      <a class="sidebar-link" href="#jit"><span class="dot"></span>JIT Compilation</a>
+      <a class="sidebar-link" href="#gc"><span class="dot"></span>Garbage Collection</a>
+      <a class="sidebar-link" href="#cts"><span class="dot"></span>CTS</a>
+      <a class="sidebar-link" href="#cls"><span class="dot"></span>CLS</a>
+      <a class="sidebar-link" href="#assemblies"><span class="dot"></span>Assemblies</a>
+      <a class="sidebar-link" href="#namespaces"><span class="dot"></span>Namespaces</a>
+      <a class="sidebar-link" href="#value-ref"><span class="dot"></span>Value vs Reference Types</a>
+      <a class="sidebar-link" href="#comparison"><span class="dot"></span>CLR vs JVM</a>
+    </div>
+  </aside>
+
+  <main class="main">
+    <div class="page-header">
+      <div class="page-crumb">dotnet-notes / <span>clr</span></div>
+      <h1 class="page-title">
+        <span class="hi">CLR &amp;</span><br/>
+        <span class="lo">.NET Runtime</span>
+      </h1>
+      <p class="page-desc">How .NET executes your code — from source file to running program. JIT, Garbage Collection, assemblies, the type system, and more.</p>
+    </div>
+
+    <!-- 1. What is CLR -->
+    <section class="section">
+      <h2 class="sec-title" id="what-is-clr">What is the CLR?</h2>
+      <p>The <strong>Common Language Runtime (CLR)</strong> is the execution engine of the .NET platform. It is the environment that manages and runs .NET programs.</p>
+      <p>The CLR handles all the low-level services that a running program needs — so the programmer can focus on writing logic, not managing memory or platform differences.</p>
+
+      <h3 class="sub-title">What the CLR does for you</h3>
+      <div class="component-grid">
+        <div class="comp-card"><div class="comp-name">Memory Management</div><div class="comp-desc">Allocates and frees memory automatically via the Garbage Collector.</div></div>
+        <div class="comp-card"><div class="comp-name">JIT Compilation</div><div class="comp-desc">Converts MSIL code to native machine code at runtime.</div></div>
+        <div class="comp-card"><div class="comp-name">Type Safety</div><div class="comp-desc">Ensures type-correct operations and prevents unsafe casts at runtime.</div></div>
+        <div class="comp-card"><div class="comp-name">Exception Handling</div><div class="comp-desc">Provides a structured, consistent mechanism for runtime errors.</div></div>
+        <div class="comp-card"><div class="comp-name">Thread Management</div><div class="comp-desc">Manages threads, synchronisation, and the thread pool.</div></div>
+        <div class="comp-card"><div class="comp-name">Security</div><div class="comp-desc">Enforces code access security and verifies assembly integrity.</div></div>
+      </div>
+    </section>
+
+    <!-- 2. .NET Architecture -->
+    <section class="section">
+      <h2 class="sec-title" id="dotnet-arch">.NET Architecture Overview</h2>
+      <div class="flow">
+<span class="cm">┌─────────────────────────────────────────────────────────────────┐</span>
+<span class="cm">│                   Your Application Code                         │</span>
+<span class="cm">│          (C#, F#, VB.NET — any .NET language)                   │</span>
+<span class="cm">└────────────────────────────┬────────────────────────────────────┘</span>
+                             │  Compiled by Language Compiler
+                             ▼
+<span class="cm">┌─────────────────────────────────────────────────────────────────┐</span>
+<span class="flow-arrow">│         MSIL / CIL — Microsoft Intermediate Language            │</span>
+<span class="cm">│            (platform-independent bytecode in .dll / .exe)       │</span>
+<span class="cm">└────────────────────────────┬────────────────────────────────────┘</span>
+                             │  JIT Compiler (inside CLR)
+                             ▼
+<span class="cm">┌─────────────────────────────────────────────────────────────────┐</span>
+<span class="flow-box">│              Native Machine Code (x86 / x64 / ARM)              │</span>
+<span class="cm">│                    Runs directly on CPU                         │</span>
+<span class="cm">└─────────────────────────────────────────────────────────────────┘</span>
+                             │
+                             ▼
+<span class="cm">┌─────────────────────────────────────────────────────────────────┐</span>
+<span class="flow-box">│                     CLR Services                                │</span>
+<span class="cm">│    GC  │  Type System  │  Exceptions  │  Security  │  Threads   │</span>
+<span class="cm">└─────────────────────────────────────────────────────────────────┘</span>
+      </div>
+      <div class="callout callout-note">
+        <p><strong>Java comparison:</strong> The CLR is analogous to the JVM. MSIL/CIL is analogous to Java bytecode (.class files). JIT in CLR is analogous to JIT in the JVM.</p>
+      </div>
+    </section>
+
+    <!-- 3. Code Execution Flow -->
+    <section class="section">
+      <h2 class="sec-title" id="code-execution">Code Execution Flow — Step by Step</h2>
+      <div class="flow">
+<span class="flow-note">Step 1</span>  You write C# source code in a <span class="flow-box">.cs file</span>
+           │
+           ▼
+<span class="flow-note">Step 2</span>  C# Compiler (<span class="flow-box">csc / dotnet build</span>) compiles it into
+           <span class="flow-arrow">MSIL (Microsoft Intermediate Language)</span> stored in a
+           <span class="flow-box">.dll</span> or <span class="flow-box">.exe</span> Assembly file
+           │
+           ▼
+<span class="flow-note">Step 3</span>  When you run the program, the CLR loads the Assembly
+           │
+           ▼
+<span class="flow-note">Step 4</span>  CLR verifies the MSIL code is <span class="flow-arrow">type-safe and valid</span>
+           │
+           ▼
+<span class="flow-note">Step 5</span>  <span class="flow-box">JIT Compiler</span> converts MSIL → <span class="flow-arrow">native machine code</span>
+           (compiled method-by-method, only when first called)
+           │
+           ▼
+<span class="flow-note">Step 6</span>  Native code executes on the <span class="flow-box">CPU</span>
+           CLR manages memory via <span class="flow-arrow">Garbage Collector</span>
+      </div>
+    </section>
+
+    <!-- 4. MSIL / CIL -->
+    <section class="section">
+      <h2 class="sec-title" id="msil">MSIL / CIL — Intermediate Language</h2>
+      <p><strong>MSIL</strong> (Microsoft Intermediate Language), also called <strong>CIL</strong> (Common Intermediate Language), is a platform-independent set of instructions that all .NET languages compile to.</p>
+      <p>This is why multiple languages (C#, F#, VB.NET) can run on the same CLR — they all compile down to the same MSIL first.</p>
+      <div class="callout callout-tip">
+        <p><strong>Key insight:</strong> MSIL is NOT machine code. It is halfway between your source code and the CPU. The CLR's JIT compiler finishes the job at runtime by converting MSIL to actual native code for your specific machine.</p>
+      </div>
+      <div class="code-block">
+        <div class="code-header"><div class="code-dots"><div class="code-dot r"></div><div class="code-dot y"></div><div class="code-dot g"></div></div><span class="code-lang">C# Source → MSIL (conceptual)</span></div>
+        <pre><span class="cm">// Your C# code</span>
+<span class="kw">int</span> a = <span class="nm">5</span>;
+<span class="kw">int</span> b = <span class="nm">10</span>;
+<span class="kw">int</span> c = a + b;
+
+<span class="cm">// What the compiler produces (MSIL instructions — simplified)</span>
+<span class="cm">// ldc.i4.5        (push 5 onto stack)</span>
+<span class="cm">// stloc.0         (store in local var a)</span>
+<span class="cm">// ldc.i4.s 10     (push 10 onto stack)</span>
+<span class="cm">// stloc.1         (store in local var b)</span>
+<span class="cm">// ldloc.0         (load a)</span>
+<span class="cm">// ldloc.1         (load b)</span>
+<span class="cm">// add             (add them)</span>
+<span class="cm">// stloc.2         (store in c)</span></pre>
+      </div>
+    </section>
+
+    <!-- 5. JIT -->
+    <section class="section">
+      <h2 class="sec-title" id="jit">JIT Compilation</h2>
+      <p><strong>JIT (Just-In-Time) Compilation</strong> is the process where the CLR converts MSIL to native machine code <em>at runtime</em>, just before the code is executed.</p>
+      <p>JIT compiles <strong>method by method</strong> — a method is compiled to native code the first time it is called. The compiled native code is then <strong>cached</strong> so subsequent calls are fast.</p>
+
+      <h3 class="sub-title">Types of JIT Compilers in .NET</h3>
+      <div class="tbl-wrap">
+        <table>
+          <thead><tr><th>Type</th><th>Description</th></tr></thead>
+          <tbody>
+            <tr><td><strong>Normal JIT</strong></td><td>Default. Compiles methods one at a time when first called. Compiled code is cached.</td></tr>
+            <tr><td><strong>Pre-JIT (NGEN / ReadyToRun)</strong></td><td>Compiles all code at install time. Faster startup but larger disk footprint.</td></tr>
+            <tr><td><strong>Econo-JIT</strong></td><td>Older/constrained environments. Compiles code but may not cache it to save memory.</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="callout callout-note">
+        <p><strong>Modern .NET:</strong> .NET 6+ uses a technology called <strong>ReadyToRun (R2R)</strong> and <strong>tiered compilation</strong> — methods are first JIT-compiled quickly for startup speed, then re-compiled with more optimisations if they run frequently (hot paths).</p>
+      </div>
+    </section>
+
+    <!-- 6. Garbage Collection -->
+    <section class="section">
+      <h2 class="sec-title" id="gc">Garbage Collection (GC)</h2>
+      <p>The <strong>Garbage Collector (GC)</strong> is the CLR's automatic memory manager. It tracks all objects on the <strong>managed heap</strong> and frees the memory of objects that are no longer reachable by any part of the program.</p>
+      <p>You <strong>do not need to manually free memory</strong> in C# (unlike C/C++). The GC handles it automatically.</p>
+
+      <h3 class="sub-title">The Managed Heap and Generations</h3>
+      <p>The GC organises the heap into <strong>three generations</strong> to make collection efficient:</p>
+      <div class="tbl-wrap">
+        <table>
+          <thead><tr><th>Generation</th><th>Contains</th><th>Collected</th></tr></thead>
+          <tbody>
+            <tr><td><strong>Gen 0</strong></td><td>Newly created, short-lived objects</td><td>Most frequently (cheapest)</td></tr>
+            <tr><td><strong>Gen 1</strong></td><td>Objects that survived one Gen 0 collection</td><td>Less frequently</td></tr>
+            <tr><td><strong>Gen 2</strong></td><td>Long-lived objects (static data, large objects)</td><td>Least frequently (most expensive)</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="flow">
+<span class="flow-note">GC Cycle (simplified)</span>
+
+<span class="flow-box">Object created</span> → stored in <span class="flow-arrow">Gen 0</span>
+         │
+         ▼
+<span class="flow-box">Gen 0 fills up</span> → GC runs on Gen 0
+         │
+         ├─ <span class="flow-arrow">Object unreachable</span> → memory freed ✅
+         │
+         └─ <span class="flow-arrow">Object still reachable</span> → promoted to <span class="flow-box">Gen 1</span>
+                    │
+                    └─ If Gen 1 fills → promoted to <span class="flow-box">Gen 2</span>
+      </div>
+
+      <h3 class="sub-title">IDisposable and Deterministic Cleanup</h3>
+      <p>The GC runs <strong>non-deterministically</strong> — you can't predict exactly when it runs. For resources that need to be released <em>immediately</em> (file handles, DB connections), implement <code>IDisposable</code> and use the <code>using</code> statement.</p>
+      <div class="code-block">
+        <div class="code-header"><div class="code-dots"><div class="code-dot r"></div><div class="code-dot y"></div><div class="code-dot g"></div></div><span class="code-lang">IDisposable Pattern</span></div>
+        <pre><span class="kw">class</span> <span class="cl">ResourceHolder</span> : <span class="cl">IDisposable</span>
+{
+    <span class="kw">private bool</span> _disposed = <span class="kw">false</span>;
+
+    <span class="kw">public void</span> <span class="fn">Dispose</span>()
+    {
+        <span class="kw">if</span> (!_disposed)
+        {
+            <span class="cm">// Release unmanaged resources here</span>
+            _disposed = <span class="kw">true</span>;
+        }
+    }
+}
+
+<span class="cm">// Dispose() called automatically at end of using block</span>
+<span class="kw">using</span> (<span class="cl">ResourceHolder</span> rh = <span class="kw">new</span> <span class="cl">ResourceHolder</span>())
+{
+    <span class="cm">// use rh</span>
+}  <span class="cm">// rh.Dispose() called here automatically</span></pre>
+      </div>
+    </section>
+
+    <!-- 7. CTS -->
+    <section class="section">
+      <h2 class="sec-title" id="cts">CTS — Common Type System</h2>
+      <p>The <strong>Common Type System (CTS)</strong> defines a standard set of data types and rules for how types are declared, used, and managed in the .NET runtime.</p>
+      <p>CTS ensures that types from <strong>different .NET languages are compatible</strong> — an <code>int</code> in C# is the same underlying type as an <code>Integer</code> in VB.NET.</p>
+
+      <h3 class="sub-title">CTS Type Hierarchy</h3>
+      <div class="flow">
+<span class="flow-box">System.Object</span>  <span class="cm">← everything inherits from this</span>
+    │
+    ├── <span class="flow-arrow">Value Types</span>  <span class="cm">(stored on stack, copied by value)</span>
+    │       ├── <span class="flow-box">Structs</span>        (int, double, bool, char, DateTime...)
+    │       └── <span class="flow-box">Enumerations</span>  (enum keyword)
+    │
+    └── <span class="flow-arrow">Reference Types</span>  <span class="cm">(stored on heap, hold a reference/pointer)</span>
+            ├── <span class="flow-box">Classes</span>       (class keyword)
+            ├── <span class="flow-box">Interfaces</span>    (interface keyword)
+            ├── <span class="flow-box">Arrays</span>
+            └── <span class="flow-box">Delegates</span>
+      </div>
+
+      <h3 class="sub-title">Built-in C# Types and CTS Equivalents</h3>
+      <div class="tbl-wrap">
+        <table>
+          <thead><tr><th>C# Keyword</th><th>CTS Type (System.*)</th><th>Size</th></tr></thead>
+          <tbody>
+            <tr><td><code>int</code></td><td><code>System.Int32</code></td><td>4 bytes</td></tr>
+            <tr><td><code>long</code></td><td><code>System.Int64</code></td><td>8 bytes</td></tr>
+            <tr><td><code>double</code></td><td><code>System.Double</code></td><td>8 bytes</td></tr>
+            <tr><td><code>float</code></td><td><code>System.Single</code></td><td>4 bytes</td></tr>
+            <tr><td><code>bool</code></td><td><code>System.Boolean</code></td><td>1 byte</td></tr>
+            <tr><td><code>char</code></td><td><code>System.Char</code></td><td>2 bytes (Unicode)</td></tr>
+            <tr><td><code>string</code></td><td><code>System.String</code></td><td>Reference type</td></tr>
+            <tr><td><code>object</code></td><td><code>System.Object</code></td><td>Reference type</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- 8. CLS -->
+    <section class="section">
+      <h2 class="sec-title" id="cls">CLS — Common Language Specification</h2>
+      <p>The <strong>Common Language Specification (CLS)</strong> is a set of rules and guidelines that a .NET language or library must follow to be <strong>fully interoperable</strong> with all other .NET languages.</p>
+      <p>CLS is a <em>subset</em> of CTS — it defines the minimum feature set that all .NET languages must support.</p>
+
+      <div class="callout callout-tip">
+        <p><strong>Simple analogy:</strong> CTS is the full vocabulary. CLS is the common vocabulary that everyone agrees to use when talking to each other. If your library follows CLS rules, any .NET language (C#, VB.NET, F#) can use it.</p>
+      </div>
+
+      <div class="tbl-wrap">
+        <table>
+          <thead><tr><th></th><th>CTS</th><th>CLS</th></tr></thead>
+          <tbody>
+            <tr><td><strong>What it is</strong></td><td>Full .NET type system</td><td>Rules for cross-language compatibility</td></tr>
+            <tr><td><strong>Scope</strong></td><td>All .NET types and features</td><td>Minimum shared subset</td></tr>
+            <tr><td><strong>Who follows it</strong></td><td>The CLR itself</td><td>Public APIs meant to be cross-language</td></tr>
+            <tr><td><strong>Example rule</strong></td><td>—</td><td>No unsigned types (<code>uint</code>) in public APIs — not all languages support them</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- 9. Assemblies -->
+    <section class="section">
+      <h2 class="sec-title" id="assemblies">Assemblies</h2>
+      <p>An <strong>Assembly</strong> is the fundamental unit of deployment and versioning in .NET. When you compile a .NET project, the output is an assembly — a <code>.dll</code> or <code>.exe</code> file.</p>
+
+      <h3 class="sub-title">What an Assembly Contains</h3>
+      <div class="tbl-wrap">
+        <table>
+          <thead><tr><th>Part</th><th>Description</th></tr></thead>
+          <tbody>
+            <tr><td><strong>MSIL Code</strong></td><td>The compiled intermediate language of your program</td></tr>
+            <tr><td><strong>Manifest</strong></td><td>Metadata about the assembly (name, version, dependencies)</td></tr>
+            <tr><td><strong>Type Metadata</strong></td><td>Descriptions of all types (classes, interfaces, methods, fields)</td></tr>
+            <tr><td><strong>Resources</strong></td><td>Embedded files like images, strings, config data</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3 class="sub-title">Types of Assemblies</h3>
+      <div class="tbl-wrap">
+        <table>
+          <thead><tr><th>Type</th><th>Extension</th><th>Description</th></tr></thead>
+          <tbody>
+            <tr><td><strong>Private Assembly</strong></td><td><code>.dll</code></td><td>Used by a single application, placed in the app folder</td></tr>
+            <tr><td><strong>Shared Assembly</strong></td><td><code>.dll</code></td><td>Stored in the GAC (Global Assembly Cache), shared across apps</td></tr>
+            <tr><td><strong>Executable</strong></td><td><code>.exe</code></td><td>Entry-point assembly, can be run directly</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- 10. Namespaces -->
+    <section class="section">
+      <h2 class="sec-title" id="namespaces">Namespaces</h2>
+      <p>A <strong>Namespace</strong> is a logical grouping of related classes, interfaces, and types. It prevents naming conflicts and organises code.</p>
+
+      <div class="code-block">
+        <div class="code-header"><div class="code-dots"><div class="code-dot r"></div><div class="code-dot y"></div><div class="code-dot g"></div></div><span class="code-lang">C#</span></div>
+        <pre><span class="cm">// Declaring a namespace</span>
+<span class="kw">namespace</span> MyApp.Models
+{
+    <span class="kw">class</span> <span class="cl">Student</span>
+    {
+        <span class="kw">public string</span> Name { <span class="kw">get</span>; <span class="kw">set</span>; }
+    }
+}
+
+<span class="cm">// Using it elsewhere</span>
+<span class="kw">using</span> MyApp.Models;           <span class="cm">// import the namespace</span>
+
+<span class="cl">Student</span> s = <span class="kw">new</span> <span class="cl">Student</span>();   <span class="cm">// no need for full name</span>
+<span class="cm">// OR without using:</span>
+MyApp.Models.<span class="cl">Student</span> s2 = <span class="kw">new</span> MyApp.Models.<span class="cl">Student</span>();</pre>
+      </div>
+
+      <h3 class="sub-title">Common .NET Framework Namespaces</h3>
+      <div class="tbl-wrap">
+        <table>
+          <thead><tr><th>Namespace</th><th>Contains</th></tr></thead>
+          <tbody>
+            <tr><td><code>System</code></td><td>Core types: <code>Console</code>, <code>Math</code>, <code>String</code>, <code>Exception</code>, all primitives</td></tr>
+            <tr><td><code>System.Collections.Generic</code></td><td><code>List&lt;T&gt;</code>, <code>Dictionary&lt;K,V&gt;</code>, <code>Stack&lt;T&gt;</code>, <code>Queue&lt;T&gt;</code></td></tr>
+            <tr><td><code>System.IO</code></td><td>File, Directory, StreamReader, StreamWriter</td></tr>
+            <tr><td><code>System.Linq</code></td><td>LINQ query extension methods</td></tr>
+            <tr><td><code>System.Threading</code></td><td>Thread, Task, Mutex, Monitor</td></tr>
+            <tr><td><code>System.Net.Http</code></td><td>HttpClient — making HTTP requests</td></tr>
+            <tr><td><code>Microsoft.AspNetCore.Mvc</code></td><td>Controllers, Views, Routing in ASP.NET Core MVC</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- 11. Value vs Reference Types -->
+    <section class="section">
+      <h2 class="sec-title" id="value-ref">Value Types vs Reference Types</h2>
+      <p>One of the most important distinctions in C# — understanding this prevents many confusing bugs.</p>
+
+      <div class="tbl-wrap">
+        <table>
+          <thead><tr><th>Feature</th><th>Value Types</th><th>Reference Types</th></tr></thead>
+          <tbody>
+            <tr><td><strong>Stored in</strong></td><td>Stack</td><td>Heap (reference on stack)</td></tr>
+            <tr><td><strong>Assignment copies</strong></td><td>The actual value</td><td>The reference (pointer)</td></tr>
+            <tr><td><strong>Default value</strong></td><td><code>0</code>, <code>false</code>, <code>'\0'</code> etc.</td><td><code>null</code></td></tr>
+            <tr><td><strong>Examples</strong></td><td><code>int</code>, <code>double</code>, <code>bool</code>, <code>struct</code>, <code>enum</code></td><td><code>class</code>, <code>string</code>, <code>array</code>, <code>interface</code></td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="code-block">
+        <div class="code-header"><div class="code-dots"><div class="code-dot r"></div><div class="code-dot y"></div><div class="code-dot g"></div></div><span class="code-lang">Value Type vs Reference Type Behaviour</span></div>
+        <pre><span class="cm">// Value type — copy is independent</span>
+<span class="kw">int</span> a = <span class="nm">10</span>;
+<span class="kw">int</span> b = a;      <span class="cm">// b gets a COPY of 10</span>
+b = <span class="nm">20</span>;
+Console.<span class="fn">WriteLine</span>(a);   <span class="cm">// 10 — unchanged</span>
+Console.<span class="fn">WriteLine</span>(b);   <span class="cm">// 20</span>
+
+<span class="cm">// Reference type — both variables point to the same object</span>
+<span class="kw">int</span>[] arr1 = { <span class="nm">1</span>, <span class="nm">2</span>, <span class="nm">3</span> };
+<span class="kw">int</span>[] arr2 = arr1;      <span class="cm">// arr2 points to the SAME array</span>
+arr2[<span class="nm">0</span>] = <span class="nm">99</span>;
+Console.<span class="fn">WriteLine</span>(arr1[<span class="nm">0</span>]);  <span class="cm">// 99 — arr1 is also changed!</span></pre>
+      </div>
+    </section>
+
+    <!-- 12. CLR vs JVM -->
+    <section class="section">
+      <h2 class="sec-title" id="comparison">CLR vs JVM — Quick Comparison</h2>
+      <div class="tbl-wrap">
+        <table>
+          <thead><tr><th>Feature</th><th>CLR (.NET)</th><th>JVM (Java)</th></tr></thead>
+          <tbody>
+            <tr><td>Runtime engine</td><td>CLR</td><td>JVM</td></tr>
+            <tr><td>Intermediate code</td><td>MSIL / CIL</td><td>Java Bytecode (.class)</td></tr>
+            <tr><td>JIT compilation</td><td><span class="yes">✓ Yes</span></td><td><span class="yes">✓ Yes</span></td></tr>
+            <tr><td>Garbage collection</td><td><span class="yes">✓ Generational GC</span></td><td><span class="yes">✓ Generational GC</span></td></tr>
+            <tr><td>Multi-language support</td><td>C#, F#, VB.NET, etc.</td><td>Primarily Java (+ Kotlin, Scala)</td></tr>
+            <tr><td>Checked exceptions</td><td><span class="no">✗ None</span></td><td><span class="yes">✓ Yes</span></td></tr>
+            <tr><td>Value types (structs)</td><td><span class="yes">✓ First-class</span></td><td>Primitive types only</td></tr>
+            <tr><td>Properties</td><td><span class="yes">✓ Language built-in</span></td><td>Manual getter/setter</td></tr>
+            <tr><td>Automatic resource management</td><td><code>using</code> statement</td><td>try-with-resources</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+  </main>
+</div>
+
+<script>
+const links = document.querySelectorAll('.sidebar-link');
+const observer = new IntersectionObserver(entries => {
+  entries.forEach(entry => {
+    if (entry.isIntersecting) {
+      links.forEach(l => l.classList.remove('active'));
+      const active = document.querySelector(`.sidebar-link[href="#${entry.target.id}"]`);
+      if (active) active.classList.add('active');
+    }
+  });
+}, { rootMargin: '-20% 0px -70% 0px' });
+document.querySelectorAll('[id]').forEach(el => observer.observe(el));
+</script>
+</body>
+</html>

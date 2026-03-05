@@ -1,0 +1,1118 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Exception Handling — .NET Notes</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=IBM+Plex+Mono:ital,wght@0,400;0,500;1,400&family=Inter:wght@300;400;500&display=swap" rel="stylesheet"/>
+<style>
+  :root {
+    --bg: #08090e;
+    --bg2: #0f1018;
+    --bg3: #151620;
+    --bg4: #1a1b28;
+    --border: rgba(255,255,255,0.07);
+    --accent: #ff6b9d;
+    --accent-dim: rgba(255,107,157,0.12);
+    --accent2: #7c6fff;
+    --text: #e8e9f0;
+    --text-muted: #6b6e85;
+    --text-dim: #9698aa;
+    --code-bg: #0d0e16;
+    --code-border: rgba(255,107,157,0.15);
+    --sidebar-w: 260px;
+  }
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  html { scroll-behavior: smooth; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Inter', sans-serif;
+    font-weight: 300;
+    line-height: 1.7;
+  }
+
+  /* Background */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image:
+      linear-gradient(rgba(255,107,157,0.02) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255,107,157,0.02) 1px, transparent 1px);
+    background-size: 40px 40px;
+    pointer-events: none;
+    z-index: 0;
+  }
+  .orb {
+    position: fixed;
+    border-radius: 50%;
+    filter: blur(100px);
+    pointer-events: none;
+    z-index: 0;
+  }
+  .orb1 { width: 600px; height: 600px; background: rgba(255,107,157,0.05); top: -200px; right: -200px; }
+  .orb2 { width: 400px; height: 400px; background: rgba(124,111,255,0.04); bottom: 0; left: -100px; }
+
+  /* ── Top Nav ── */
+  nav {
+    position: fixed;
+    top: 0; left: 0; right: 0;
+    z-index: 200;
+    height: 60px;
+    display: flex;
+    align-items: center;
+    padding: 0 24px;
+    gap: 12px;
+    background: rgba(8,9,14,0.9);
+    backdrop-filter: blur(20px);
+    border-bottom: 1px solid var(--border);
+  }
+  .nav-back {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.72rem;
+    color: var(--text-muted);
+    text-decoration: none;
+    padding: 5px 10px;
+    border-radius: 6px;
+    border: 1px solid var(--border);
+    transition: all 0.2s;
+  }
+  .nav-back:hover { color: var(--accent); border-color: var(--accent); }
+  .nav-sep { color: var(--border); }
+  .nav-title {
+    font-family: 'Syne', sans-serif;
+    font-weight: 700;
+    font-size: 0.9rem;
+    color: var(--text);
+  }
+  .nav-badge {
+    margin-left: auto;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.65rem;
+    letter-spacing: 0.1em;
+    color: var(--accent);
+    background: var(--accent-dim);
+    border: 1px solid rgba(255,107,157,0.2);
+    padding: 3px 10px;
+    border-radius: 12px;
+  }
+  /* Nav topic links */
+  .nav-topics { display:flex; gap:4px; margin-left: 16px; }
+  .nav-topic {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.65rem;
+    padding: 4px 9px;
+    border-radius: 5px;
+    color: var(--text-muted);
+    text-decoration: none;
+    border: 1px solid transparent;
+    transition: all 0.2s;
+  }
+  .nav-topic:hover { color: var(--text); border-color: var(--border); }
+  .nav-topic.active { color: var(--accent); border-color: rgba(255,107,157,0.3); background: var(--accent-dim); }
+
+  /* ── Layout ── */
+  .layout {
+    position: relative;
+    z-index: 1;
+    display: flex;
+    padding-top: 60px;
+    min-height: 100vh;
+  }
+
+  /* ── Sidebar ── */
+  .sidebar {
+    position: fixed;
+    top: 60px;
+    left: 0;
+    bottom: 0;
+    width: var(--sidebar-w);
+    overflow-y: auto;
+    padding: 28px 0;
+    border-right: 1px solid var(--border);
+    background: var(--bg);
+    scrollbar-width: none;
+  }
+  .sidebar::-webkit-scrollbar { display: none; }
+  .sidebar-section {
+    padding: 0 16px;
+    margin-bottom: 24px;
+  }
+  .sidebar-label {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.6rem;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    padding: 0 8px;
+    margin-bottom: 8px;
+  }
+  .sidebar-link {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 7px 8px;
+    border-radius: 6px;
+    font-size: 0.82rem;
+    color: var(--text-muted);
+    text-decoration: none;
+    transition: all 0.18s;
+    font-weight: 400;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .sidebar-link:hover { color: var(--text); background: rgba(255,255,255,0.04); }
+  .sidebar-link.active { color: var(--accent); background: var(--accent-dim); }
+  .sidebar-link .dot {
+    width: 5px; height: 5px;
+    border-radius: 50%;
+    background: currentColor;
+    flex-shrink: 0;
+    opacity: 0.6;
+  }
+
+  /* ── Main content ── */
+  .main {
+    margin-left: var(--sidebar-w);
+    flex: 1;
+    max-width: 860px;
+    padding: 56px 64px 120px;
+  }
+
+  /* ── Page header ── */
+  .page-header {
+    margin-bottom: 64px;
+    padding-bottom: 40px;
+    border-bottom: 1px solid var(--border);
+  }
+  .page-crumb {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.68rem;
+    color: var(--text-muted);
+    letter-spacing: 0.1em;
+    margin-bottom: 16px;
+  }
+  .page-crumb span { color: var(--accent); }
+  .page-title {
+    font-family: 'Syne', sans-serif;
+    font-weight: 800;
+    font-size: 3rem;
+    letter-spacing: -0.04em;
+    line-height: 1;
+    margin-bottom: 16px;
+  }
+  .page-title .hi { color: var(--text); }
+  .page-title .lo {
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+  .page-desc {
+    font-size: 0.95rem;
+    color: var(--text-muted);
+    max-width: 500px;
+    line-height: 1.7;
+  }
+
+  /* ── Section ── */
+  .section { margin-bottom: 72px; }
+  .section-id { scroll-margin-top: 80px; }
+
+  h2.sec-title {
+    font-family: 'Syne', sans-serif;
+    font-weight: 700;
+    font-size: 1.5rem;
+    letter-spacing: -0.02em;
+    color: var(--text);
+    margin-bottom: 20px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  h2.sec-title::before {
+    content: '';
+    display: block;
+    width: 4px;
+    height: 22px;
+    background: var(--accent);
+    border-radius: 2px;
+    flex-shrink: 0;
+  }
+  h3.sub-title {
+    font-family: 'Syne', sans-serif;
+    font-weight: 600;
+    font-size: 1.1rem;
+    color: var(--text-dim);
+    margin: 28px 0 14px;
+    letter-spacing: -0.01em;
+  }
+
+  p { margin-bottom: 14px; color: var(--text-dim); font-size: 0.93rem; }
+  p strong { color: var(--text); font-weight: 500; }
+
+  /* ── Code block ── */
+  .code-block {
+    position: relative;
+    background: var(--code-bg);
+    border: 1px solid var(--code-border);
+    border-radius: 10px;
+    margin: 20px 0;
+    overflow: hidden;
+  }
+  .code-header {
+    display: flex;
+    align-items: center;
+    padding: 10px 16px;
+    border-bottom: 1px solid var(--code-border);
+    background: rgba(255,107,157,0.04);
+    gap: 8px;
+  }
+  .code-dots { display:flex; gap:5px; }
+  .code-dot { width:10px; height:10px; border-radius:50%; }
+  .code-dot.r { background: #ff5f57; }
+  .code-dot.y { background: #ffbd2e; }
+  .code-dot.g { background: #27c93f; }
+  .code-lang {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.65rem;
+    letter-spacing: 0.1em;
+    color: var(--accent);
+    margin-left: auto;
+    text-transform: uppercase;
+  }
+  pre {
+    padding: 20px 20px;
+    overflow-x: auto;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.82rem;
+    line-height: 1.65;
+    color: #cdd6f4;
+    scrollbar-width: thin;
+    scrollbar-color: var(--border) transparent;
+  }
+  pre::-webkit-scrollbar { height: 4px; }
+  pre::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+
+  /* Syntax tokens */
+  .kw { color: #cba6f7; }   /* keywords */
+  .cl { color: #89dceb; }   /* class names */
+  .fn { color: #89b4fa; }   /* functions */
+  .st { color: #a6e3a1; }   /* strings */
+  .cm { color: #585b70; font-style: italic; } /* comments */
+  .nm { color: #fab387; }   /* numbers */
+  .ac { color: #f38ba8; }   /* accent/exception names */
+
+  /* ── Inline code ── */
+  code {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.8em;
+    background: rgba(255,107,157,0.08);
+    border: 1px solid rgba(255,107,157,0.15);
+    padding: 1px 6px;
+    border-radius: 4px;
+    color: var(--accent);
+  }
+
+  /* ── Info / callout boxes ── */
+  .callout {
+    border-radius: 10px;
+    padding: 18px 20px;
+    margin: 20px 0;
+    border-left: 3px solid;
+    font-size: 0.875rem;
+    line-height: 1.65;
+  }
+  .callout p { margin: 0; font-size: inherit; }
+  .callout-note { background: rgba(124,111,255,0.07); border-color: var(--accent2); color: #a0a4c0; }
+  .callout-note strong { color: var(--accent2); }
+  .callout-warn { background: rgba(255,189,68,0.06); border-color: #ffc060; color: #a09070; }
+  .callout-warn strong { color: #ffc060; }
+  .callout-tip  { background: rgba(57,224,155,0.06); border-color: #39e09b; color: #7a9a8a; }
+  .callout-tip strong { color: #39e09b; }
+
+  /* ── Hierarchy diagram ── */
+  .hierarchy {
+    background: var(--code-bg);
+    border: 1px solid var(--code-border);
+    border-radius: 10px;
+    padding: 20px 24px;
+    margin: 20px 0;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.8rem;
+    line-height: 1.9;
+    color: #cdd6f4;
+    overflow-x: auto;
+  }
+  .hier-root { color: #cba6f7; font-weight: 500; }
+  .hier-mid  { color: #89dceb; }
+  .hier-leaf { color: #a6e3a1; }
+  .hier-exc  { color: #f38ba8; }
+
+  /* ── Table ── */
+  .tbl-wrap { overflow-x: auto; margin: 20px 0; border-radius: 10px; border: 1px solid var(--border); }
+  table { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
+  thead tr { background: var(--bg3); }
+  th { font-family: 'IBM Plex Mono', monospace; font-size: 0.7rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--text-muted); padding: 12px 16px; text-align: left; font-weight: 500; border-bottom: 1px solid var(--border); }
+  td { padding: 11px 16px; color: var(--text-dim); border-bottom: 1px solid var(--border); vertical-align: top; }
+  tr:last-child td { border-bottom: none; }
+  tr:hover td { background: rgba(255,255,255,0.02); }
+  td code { font-size: 0.78em; }
+  .yes { color: #39e09b; font-weight: 500; }
+  .no  { color: #f38ba8; font-weight: 500; }
+
+  /* ── Flow diagram ── */
+  .flow {
+    background: var(--code-bg);
+    border: 1px solid var(--code-border);
+    border-radius: 10px;
+    padding: 24px;
+    margin: 20px 0;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.78rem;
+    line-height: 2;
+    color: #cdd6f4;
+    overflow-x: auto;
+  }
+  .flow-box { color: #89b4fa; }
+  .flow-arrow { color: var(--accent); }
+  .flow-note { color: #585b70; font-style: italic; }
+
+  /* ── Numbered list ── */
+  ol.steps { padding-left: 0; list-style: none; counter-reset: step; }
+  ol.steps li {
+    counter-increment: step;
+    display: flex;
+    gap: 14px;
+    margin-bottom: 12px;
+    font-size: 0.9rem;
+    color: var(--text-dim);
+    align-items: flex-start;
+  }
+  ol.steps li::before {
+    content: counter(step);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 24px;
+    height: 24px;
+    background: var(--accent-dim);
+    border: 1px solid rgba(255,107,157,0.25);
+    border-radius: 6px;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.7rem;
+    color: var(--accent);
+    flex-shrink: 0;
+    margin-top: 2px;
+  }
+
+  /* ── Divider ── */
+  hr { border: none; border-top: 1px solid var(--border); margin: 48px 0; }
+
+  @media (max-width: 900px) {
+    .sidebar { display: none; }
+    .main { margin-left: 0; padding: 40px 24px 80px; }
+  }
+</style>
+</head>
+<body>
+<div class="orb orb1"></div>
+<div class="orb orb2"></div>
+
+<!-- Nav -->
+<nav>
+  <a class="nav-back" href="index.html">← Home</a>
+  <span class="nav-sep">/</span>
+  <span class="nav-title">Exception Handling</span>
+  <div class="nav-topics">
+    <a class="nav-topic" href="clr.html">CLR</a>
+    <a class="nav-topic" href="oops.html">OOP</a>
+    <a class="nav-topic active" href="exception-handling.html">Exceptions</a>
+    <a class="nav-topic" href="collection.html">Collections</a>
+  </div>
+  <div class="nav-badge">C# / .NET</div>
+</nav>
+
+<div class="layout">
+
+  <!-- Sidebar -->
+  <aside class="sidebar">
+    <div class="sidebar-section">
+      <div class="sidebar-label">// On This Page</div>
+      <a class="sidebar-link active" href="#intro"><span class="dot"></span>What is an Exception?</a>
+      <a class="sidebar-link" href="#hierarchy"><span class="dot"></span>Class Hierarchy</a>
+      <a class="sidebar-link" href="#types"><span class="dot"></span>Types of Exceptions</a>
+      <a class="sidebar-link" href="#try-catch"><span class="dot"></span>try and catch</a>
+      <a class="sidebar-link" href="#properties"><span class="dot"></span>Exception Properties</a>
+      <a class="sidebar-link" href="#multi-catch"><span class="dot"></span>Multiple catch Blocks</a>
+      <a class="sidebar-link" href="#finally"><span class="dot"></span>finally Block</a>
+      <a class="sidebar-link" href="#when"><span class="dot"></span>Exception Filters (when)</a>
+      <a class="sidebar-link" href="#throw"><span class="dot"></span>throw Keyword</a>
+      <a class="sidebar-link" href="#using"><span class="dot"></span>using Statement</a>
+      <a class="sidebar-link" href="#custom"><span class="dot"></span>Custom Exceptions</a>
+      <a class="sidebar-link" href="#propagation"><span class="dot"></span>Exception Propagation</a>
+      <a class="sidebar-link" href="#inner"><span class="dot"></span>InnerException</a>
+      <a class="sidebar-link" href="#flow"><span class="dot"></span>Flow Diagram</a>
+      <a class="sidebar-link" href="#summary"><span class="dot"></span>Summary Table</a>
+    </div>
+  </aside>
+
+  <!-- Main -->
+  <main class="main">
+
+    <div class="page-header">
+      <div class="page-crumb">dotnet-notes / <span>exception-handling</span></div>
+      <h1 class="page-title">
+        <span class="hi">Exception</span><br/>
+        <span class="lo">Handling</span>
+      </h1>
+      <p class="page-desc">Everything about handling runtime errors in C# — from the class hierarchy and try-catch mechanics to custom exceptions and resource management.</p>
+    </div>
+
+    <!-- ── 1. What is an Exception ── -->
+    <section class="section">
+      <h2 class="sec-title" id="intro">What is an Exception?</h2>
+      <p>An <strong>Exception</strong> is an unwanted or unexpected event that occurs <strong>during program execution</strong> and disrupts the normal flow of the program.</p>
+      <p>Exceptions in C# usually occur due to <strong>problems in program logic</strong> or <strong>invalid operations at runtime</strong>. Unlike system-level errors (like <code>StackOverflowException</code>), most exceptions are <strong>within the programmer's control</strong> and can be handled.</p>
+      <p>The process of responding to exceptions is called <strong>Exception Handling</strong>.</p>
+      <div class="callout callout-note">
+        <p><strong>Key difference from Java:</strong> C# has <strong>no checked exceptions</strong>. The compiler never forces you to handle or declare any exception. All exceptions in C# behave like Java's unchecked (runtime) exceptions.</p>
+      </div>
+    </section>
+
+    <!-- ── 2. Hierarchy ── -->
+    <section class="section">
+      <h2 class="sec-title" id="hierarchy">Exception Class Hierarchy</h2>
+      <p>Every exception in C# ultimately inherits from <code>System.Exception</code>.</p>
+      <div class="hierarchy">
+<span class="hier-root">System.Object</span>
+  └── <span class="hier-root">System.Exception</span>
+          ├── <span class="hier-mid">System.SystemException</span>
+          │       ├── <span class="hier-exc">System.ArithmeticException</span>
+          │       │       └── <span class="hier-leaf">System.DivideByZeroException</span>
+          │       ├── <span class="hier-leaf">System.NullReferenceException</span>
+          │       ├── <span class="hier-leaf">System.IndexOutOfRangeException</span>
+          │       ├── <span class="hier-leaf">System.InvalidCastException</span>
+          │       ├── <span class="hier-leaf">System.StackOverflowException</span>
+          │       ├── <span class="hier-leaf">System.OutOfMemoryException</span>
+          │       ├── <span class="hier-exc">System.IO.IOException</span>
+          │       │       └── <span class="hier-leaf">System.IO.FileNotFoundException</span>
+          │       └── <span class="hier-leaf">System.FormatException</span>
+          │
+          └── <span class="hier-mid">System.ApplicationException</span>
+                  └── <span class="hier-leaf">YourCustomException</span>  <span class="cm">← user-defined</span>
+      </div>
+      <div class="callout callout-note">
+        <p><strong>Points to remember:</strong> <code>System.Object</code> is the root of everything in C#. <code>System.SystemException</code> is the base for all built-in CLR exceptions. <code>System.ApplicationException</code> is the conventional base for user-defined app-level exceptions.</p>
+      </div>
+    </section>
+
+    <!-- ── 3. Types ── -->
+    <section class="section">
+      <h2 class="sec-title" id="types">Types of Exceptions in C#</h2>
+      <p>C# does <strong>not</strong> distinguish between checked and unchecked exceptions like Java. All exceptions are unchecked. They are logically grouped as:</p>
+
+      <h3 class="sub-title">System Exceptions (thrown by the CLR)</h3>
+      <div class="tbl-wrap">
+        <table>
+          <thead><tr><th>Exception</th><th>Cause</th></tr></thead>
+          <tbody>
+            <tr><td><code>DivideByZeroException</code></td><td>Integer division by zero</td></tr>
+            <tr><td><code>NullReferenceException</code></td><td>Accessing a member on a <code>null</code> object</td></tr>
+            <tr><td><code>IndexOutOfRangeException</code></td><td>Array index out of valid range</td></tr>
+            <tr><td><code>InvalidCastException</code></td><td>Invalid type cast operation</td></tr>
+            <tr><td><code>FormatException</code></td><td>Input string in wrong format (e.g. parsing "abc" as int)</td></tr>
+            <tr><td><code>OverflowException</code></td><td>Arithmetic overflow in a <code>checked</code> context</td></tr>
+            <tr><td><code>StackOverflowException</code></td><td>Deep or infinite recursion — not catchable</td></tr>
+            <tr><td><code>OutOfMemoryException</code></td><td>CLR cannot allocate memory</td></tr>
+            <tr><td><code>FileNotFoundException</code></td><td>File not found at given path</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3 class="sub-title">Application (User-Defined) Exceptions</h3>
+      <p>Created by the programmer to represent application-specific errors. Should inherit from <code>Exception</code> or <code>ApplicationException</code>. Covered fully in the <a href="#custom" style="color:var(--accent)">Custom Exceptions</a> section.</p>
+    </section>
+
+    <!-- ── 4. try-catch ── -->
+    <section class="section">
+      <h2 class="sec-title" id="try-catch">try and catch Block</h2>
+      <p><strong>try block</strong> — contains risky code that may throw an exception.<br/><strong>catch block</strong> — handles the exception. Executes <em>only</em> when an exception is thrown.</p>
+
+      <div class="code-block">
+        <div class="code-header"><div class="code-dots"><div class="code-dot r"></div><div class="code-dot y"></div><div class="code-dot g"></div></div><span class="code-lang">Syntax — C#</span></div>
+        <pre><span class="kw">try</span>
+{
+    <span class="cm">// Risky code that may throw an exception</span>
+}
+<span class="kw">catch</span> (<span class="cl">ExceptionType</span> referenceVariable)
+{
+    <span class="cm">// Code to handle the exception</span>
+}</pre>
+      </div>
+
+      <div class="code-block">
+        <div class="code-header"><div class="code-dots"><div class="code-dot r"></div><div class="code-dot y"></div><div class="code-dot g"></div></div><span class="code-lang">Example — Division by Zero</span></div>
+        <pre><span class="kw">using</span> System;
+
+<span class="kw">class</span> <span class="cl">Program</span>
+{
+    <span class="kw">static void</span> <span class="fn">Main</span>(<span class="kw">string</span>[] args)
+    {
+        Console.<span class="fn">WriteLine</span>(<span class="st">"Program Starts"</span>);
+
+        Console.<span class="fn">Write</span>(<span class="st">"Enter first number: "</span>);
+        <span class="kw">int</span> a = <span class="kw">int</span>.<span class="fn">Parse</span>(Console.<span class="fn">ReadLine</span>());
+
+        Console.<span class="fn">Write</span>(<span class="st">"Enter second number: "</span>);
+        <span class="kw">int</span> b = <span class="kw">int</span>.<span class="fn">Parse</span>(Console.<span class="fn">ReadLine</span>());
+
+        <span class="kw">try</span>
+        {
+            <span class="kw">int</span> result = a / b;
+            Console.<span class="fn">WriteLine</span>(<span class="st">"Result: "</span> + result);
+        }
+        <span class="kw">catch</span> (<span class="ac">DivideByZeroException</span> e)
+        {
+            Console.<span class="fn">WriteLine</span>(<span class="st">"Cannot divide by zero. "</span> + e.Message);
+        }
+
+        Console.<span class="fn">WriteLine</span>(<span class="st">"Program Ends"</span>);
+    }
+}</pre>
+      </div>
+
+      <div class="callout callout-tip">
+        <p><strong>Key behaviour:</strong> After the exception is caught and handled, execution continues from <em>after</em> the catch block — the program does not crash. Lines after the try-catch block execute normally.</p>
+      </div>
+    </section>
+
+    <!-- ── 5. Properties ── -->
+    <section class="section">
+      <h2 class="sec-title" id="properties">Useful Properties of the Exception Class</h2>
+      <div class="tbl-wrap">
+        <table>
+          <thead><tr><th>Property</th><th>Description</th></tr></thead>
+          <tbody>
+            <tr><td><code>e.Message</code></td><td>Short description of the exception</td></tr>
+            <tr><td><code>e.StackTrace</code></td><td>Call stack at the point the exception was thrown</td></tr>
+            <tr><td><code>e.Source</code></td><td>Name of the application or object that caused the error</td></tr>
+            <tr><td><code>e.InnerException</code></td><td>The original exception that caused the current one (if any)</td></tr>
+            <tr><td><code>e.GetType().Name</code></td><td>Runtime type name of the exception</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="code-block">
+        <div class="code-header"><div class="code-dots"><div class="code-dot r"></div><div class="code-dot y"></div><div class="code-dot g"></div></div><span class="code-lang">Example</span></div>
+        <pre><span class="kw">try</span>
+{
+    <span class="kw">int</span>[] arr = <span class="kw">new int</span>[<span class="nm">3</span>];
+    arr[<span class="nm">10</span>] = <span class="nm">5</span>;   <span class="cm">// IndexOutOfRangeException</span>
+}
+<span class="kw">catch</span> (<span class="ac">IndexOutOfRangeException</span> e)
+{
+    Console.<span class="fn">WriteLine</span>(<span class="st">"Message     : "</span> + e.Message);
+    Console.<span class="fn">WriteLine</span>(<span class="st">"Source      : "</span> + e.Source);
+    Console.<span class="fn">WriteLine</span>(<span class="st">"Stack Trace : "</span> + e.StackTrace);
+}</pre>
+      </div>
+    </section>
+
+    <!-- ── 6. Multiple catch ── -->
+    <section class="section">
+      <h2 class="sec-title" id="multi-catch">Multiple catch Blocks</h2>
+      <p>A single <code>try</code> block can be followed by multiple <code>catch</code> blocks, each handling a different type of exception.</p>
+
+      <div class="code-block">
+        <div class="code-header"><div class="code-dots"><div class="code-dot r"></div><div class="code-dot y"></div><div class="code-dot g"></div></div><span class="code-lang">Syntax</span></div>
+        <pre><span class="kw">try</span>
+{
+    <span class="cm">// Risky code</span>
+}
+<span class="kw">catch</span> (<span class="cl">ExceptionType1</span> e1)
+{
+    <span class="cm">// Handle ExceptionType1</span>
+}
+<span class="kw">catch</span> (<span class="cl">ExceptionType2</span> e2)
+{
+    <span class="cm">// Handle ExceptionType2</span>
+}
+<span class="kw">catch</span> (<span class="ac">Exception</span> e)
+{
+    <span class="cm">// Generic fallback — handles anything not caught above</span>
+}</pre>
+      </div>
+
+      <div class="code-block">
+        <div class="code-header"><div class="code-dots"><div class="code-dot r"></div><div class="code-dot y"></div><div class="code-dot g"></div></div><span class="code-lang">Example</span></div>
+        <pre><span class="kw">using</span> System;
+
+<span class="kw">class</span> <span class="cl">MultiCatchDemo</span>
+{
+    <span class="kw">static void</span> <span class="fn">Main</span>(<span class="kw">string</span>[] args)
+    {
+        <span class="kw">string</span> str = <span class="st">"Akshay"</span>;
+        <span class="kw">int</span>[] arr = { <span class="nm">20</span>, <span class="nm">60</span>, <span class="nm">80</span>, <span class="nm">90</span>, <span class="nm">50</span> };
+
+        Console.<span class="fn">Write</span>(<span class="st">"Enter an index: "</span>);
+        <span class="kw">int</span> n = <span class="kw">int</span>.<span class="fn">Parse</span>(Console.<span class="fn">ReadLine</span>());
+
+        <span class="kw">try</span>
+        {
+            Console.<span class="fn">WriteLine</span>(arr[n]);       <span class="cm">// may throw IndexOutOfRangeException</span>
+            Console.<span class="fn">WriteLine</span>(str[n]);       <span class="cm">// may throw IndexOutOfRangeException</span>
+            Console.<span class="fn">WriteLine</span>(<span class="nm">100</span> / n);      <span class="cm">// may throw DivideByZeroException</span>
+        }
+        <span class="kw">catch</span> (<span class="ac">DivideByZeroException</span> e)
+        {
+            Console.<span class="fn">WriteLine</span>(<span class="st">"Cannot divide by zero: "</span> + e.Message);
+        }
+        <span class="kw">catch</span> (<span class="ac">IndexOutOfRangeException</span> e)
+        {
+            Console.<span class="fn">WriteLine</span>(<span class="st">"Index is out of range: "</span> + e.Message);
+        }
+        <span class="kw">catch</span> (<span class="ac">Exception</span> e)
+        {
+            Console.<span class="fn">WriteLine</span>(<span class="st">"Something went wrong: "</span> + e.Message);
+        }
+    }
+}</pre>
+      </div>
+
+      <div class="callout callout-warn">
+        <p><strong>Important Rules:</strong> Catch blocks are checked <strong>top to bottom</strong> — first match executes. Always place <strong>specific (child) exceptions before general (parent) ones</strong>. Placing <code>catch (Exception e)</code> first makes all specific blocks below it unreachable — C# flags this as a <strong>compile-time error</strong>.</p>
+      </div>
+    </section>
+
+    <!-- ── 7. finally ── -->
+    <section class="section">
+      <h2 class="sec-title" id="finally">finally Block</h2>
+      <p>The <code>finally</code> block <strong>always executes</strong> after the <code>try</code> block — whether an exception occurred or not.</p>
+      <p><strong>Uses:</strong> Release resources (files, DB connections, streams) · Cleanup tasks · Guarantee execution of critical code.</p>
+
+      <div class="code-block">
+        <div class="code-header"><div class="code-dots"><div class="code-dot r"></div><div class="code-dot y"></div><div class="code-dot g"></div></div><span class="code-lang">Syntax</span></div>
+        <pre><span class="kw">try</span>   { <span class="cm">/* risky code */</span>        }
+<span class="kw">catch</span> (<span class="cl">ExceptionType</span> e) { <span class="cm">/* handle */</span>          }
+<span class="kw">finally</span>               { <span class="cm">/* always runs */</span>     }</pre>
+      </div>
+
+      <div class="code-block">
+        <div class="code-header"><div class="code-dots"><div class="code-dot r"></div><div class="code-dot y"></div><div class="code-dot g"></div></div><span class="code-lang">Example</span></div>
+        <pre><span class="kw">try</span>
+{
+    Console.<span class="fn">WriteLine</span>(<span class="st">"Inside try block"</span>);
+    <span class="kw">int</span> result = <span class="nm">10</span> / <span class="nm">2</span>;    <span class="cm">// change to 10/0 to trigger exception</span>
+    Console.<span class="fn">WriteLine</span>(<span class="st">"Result: "</span> + result);
+}
+<span class="kw">catch</span> (<span class="ac">DivideByZeroException</span> e)
+{
+    Console.<span class="fn">WriteLine</span>(<span class="st">"Exception caught: "</span> + e.Message);
+}
+<span class="kw">finally</span>
+{
+    Console.<span class="fn">WriteLine</span>(<span class="st">"Finally block always executes — cleanup done."</span>);
+}</pre>
+      </div>
+
+      <div class="callout callout-note">
+        <p><strong>Note:</strong> <code>finally</code> executes even if a <code>return</code> statement is inside <code>try</code> or <code>catch</code>. It does <strong>NOT</strong> execute only if <code>Environment.Exit()</code> is called, or a fatal crash (like <code>StackOverflowException</code>) kills the process.</p>
+      </div>
+    </section>
+
+    <!-- ── 8. when ── -->
+    <section class="section">
+      <h2 class="sec-title" id="when">Exception Filters — <code>when</code> Clause (C# 6+)</h2>
+      <p>The <code>when</code> keyword adds a <strong>condition</strong> to a catch block. The catch only executes if the condition is <code>true</code>. This is a C#-only feature not present in Java.</p>
+
+      <div class="code-block">
+        <div class="code-header"><div class="code-dots"><div class="code-dot r"></div><div class="code-dot y"></div><div class="code-dot g"></div></div><span class="code-lang">Syntax</span></div>
+        <pre><span class="kw">catch</span> (<span class="cl">ExceptionType</span> e) <span class="kw">when</span> (condition)
+{
+    <span class="cm">// executes only if condition is true</span>
+}</pre>
+      </div>
+
+      <div class="code-block">
+        <div class="code-header"><div class="code-dots"><div class="code-dot r"></div><div class="code-dot y"></div><div class="code-dot g"></div></div><span class="code-lang">Example — HTTP error codes</span></div>
+        <pre><span class="kw">int</span>[] codes = { <span class="nm">404</span>, <span class="nm">500</span>, <span class="nm">200</span> };
+
+<span class="kw">foreach</span> (<span class="kw">int</span> code <span class="kw">in</span> codes)
+{
+    <span class="kw">try</span>
+    {
+        <span class="kw">if</span> (code != <span class="nm">200</span>)
+            <span class="kw">throw new</span> <span class="ac">Exception</span>(<span class="st">"HTTP Error: "</span> + code);
+        Console.<span class="fn">WriteLine</span>(<span class="st">"Success: "</span> + code);
+    }
+    <span class="kw">catch</span> (<span class="ac">Exception</span> e) <span class="kw">when</span> (e.Message.<span class="fn">Contains</span>(<span class="st">"404"</span>))
+    {
+        Console.<span class="fn">WriteLine</span>(<span class="st">"Not Found: "</span> + e.Message);
+    }
+    <span class="kw">catch</span> (<span class="ac">Exception</span> e) <span class="kw">when</span> (e.Message.<span class="fn">Contains</span>(<span class="st">"500"</span>))
+    {
+        Console.<span class="fn">WriteLine</span>(<span class="st">"Server Error: "</span> + e.Message);
+    }
+}</pre>
+      </div>
+
+      <p>You can also use <code>when</code> to catch multiple unrelated exception types in one block:</p>
+      <div class="code-block">
+        <div class="code-header"><div class="code-dots"><div class="code-dot r"></div><div class="code-dot y"></div><div class="code-dot g"></div></div><span class="code-lang">Multi-type catch using when</span></div>
+        <pre><span class="kw">catch</span> (<span class="ac">Exception</span> e) <span class="kw">when</span> (e <span class="kw">is</span> <span class="cl">FormatException</span> || e <span class="kw">is</span> <span class="cl">OverflowException</span>)
+{
+    Console.<span class="fn">WriteLine</span>(<span class="st">"Invalid input: "</span> + e.Message);
+}</pre>
+      </div>
+
+      <div class="callout callout-tip">
+        <p><strong>Advantage of <code>when</code>:</strong> The filter runs <em>before the stack is unwound</em>, which means you keep the full original stack trace for debugging — you don't lose context like you might with a re-throw.</p>
+      </div>
+    </section>
+
+    <!-- ── 9. throw ── -->
+    <section class="section">
+      <h2 class="sec-title" id="throw">throw Keyword</h2>
+      <p>The <code>throw</code> keyword is used to <strong>explicitly throw an exception</strong> — either a brand new one or an existing caught one.</p>
+
+      <div class="code-block">
+        <div class="code-header"><div class="code-dots"><div class="code-dot r"></div><div class="code-dot y"></div><div class="code-dot g"></div></div><span class="code-lang">Throwing a new exception</span></div>
+        <pre><span class="kw">static void</span> <span class="fn">CheckAge</span>(<span class="kw">int</span> age)
+{
+    <span class="kw">if</span> (age < <span class="nm">18</span>)
+        <span class="kw">throw new</span> <span class="ac">ArgumentException</span>(<span class="st">"Age must be 18 or above. Got: "</span> + age);
+
+    Console.<span class="fn">WriteLine</span>(<span class="st">"Access granted."</span>);
+}
+
+<span class="kw">static void</span> <span class="fn">Main</span>(<span class="kw">string</span>[] args)
+{
+    <span class="kw">try</span>   { <span class="fn">CheckAge</span>(<span class="nm">15</span>); }
+    <span class="kw">catch</span> (<span class="ac">ArgumentException</span> e) { Console.<span class="fn">WriteLine</span>(<span class="st">"Caught: "</span> + e.Message); }
+}</pre>
+      </div>
+
+      <h3 class="sub-title">Re-throwing an Exception</h3>
+      <div class="code-block">
+        <div class="code-header"><div class="code-dots"><div class="code-dot r"></div><div class="code-dot y"></div><div class="code-dot g"></div></div><span class="code-lang">Bare throw vs throw e</span></div>
+        <pre><span class="kw">catch</span> (<span class="ac">Exception</span> e)
+{
+    Console.<span class="fn">WriteLine</span>(<span class="st">"Logging: "</span> + e.Message);
+    <span class="kw">throw</span>;        <span class="cm">// ✅ Preserves original stack trace — use this</span>
+}
+
+<span class="kw">catch</span> (<span class="ac">Exception</span> e)
+{
+    <span class="kw">throw</span> e;      <span class="cm">// ❌ Resets stack trace — avoid this</span>
+}
+
+<span class="kw">catch</span> (<span class="ac">IOException</span> e)
+{
+    <span class="cm">// Wrap in a higher-level exception (original becomes InnerException)</span>
+    <span class="kw">throw new</span> <span class="ac">InvalidOperationException</span>(<span class="st">"Higher-level message"</span>, e);
+}</pre>
+      </div>
+
+      <div class="callout callout-warn">
+        <p><strong>Remember:</strong> Always use bare <code>throw;</code> when re-throwing — it preserves the original stack trace. <code>throw e;</code> resets it and makes debugging much harder.</p>
+      </div>
+    </section>
+
+    <!-- ── 10. using ── -->
+    <section class="section">
+      <h2 class="sec-title" id="using">using Statement — Auto Resource Management</h2>
+      <p>The <code>using</code> statement ensures objects implementing <code>IDisposable</code> are <strong>automatically closed/disposed</strong> when the block ends — even if an exception occurs.</p>
+      <p>This is C#'s equivalent of Java's try-with-resources.</p>
+
+      <div class="code-block">
+        <div class="code-header"><div class="code-dots"><div class="code-dot r"></div><div class="code-dot y"></div><div class="code-dot g"></div></div><span class="code-lang">Syntax</span></div>
+        <pre><span class="kw">using</span> (<span class="cl">ResourceType</span> resource = <span class="kw">new</span> <span class="cl">ResourceType</span>())
+{
+    <span class="cm">// use the resource</span>
+}  <span class="cm">// resource.Dispose() is called automatically here</span></pre>
+      </div>
+
+      <div class="code-block">
+        <div class="code-header"><div class="code-dots"><div class="code-dot r"></div><div class="code-dot y"></div><div class="code-dot g"></div></div><span class="code-lang">Example — Reading a File</span></div>
+        <pre><span class="kw">using</span> System;
+<span class="kw">using</span> System.IO;
+
+<span class="kw">class</span> <span class="cl">UsingDemo</span>
+{
+    <span class="kw">static void</span> <span class="fn">Main</span>(<span class="kw">string</span>[] args)
+    {
+        Console.<span class="fn">WriteLine</span>(<span class="st">"----- App Started -----"</span>);
+
+        <span class="kw">try</span>
+        {
+            <span class="kw">using</span> (<span class="cl">StreamReader</span> sr = <span class="kw">new</span> <span class="cl">StreamReader</span>(<span class="st">"test.txt"</span>))
+            {
+                <span class="kw">string</span> line;
+                <span class="kw">while</span> ((line = sr.<span class="fn">ReadLine</span>()) != <span class="kw">null</span>)
+                    Console.<span class="fn">WriteLine</span>(line);
+            }  <span class="cm">// sr.Dispose() called here automatically</span>
+        }
+        <span class="kw">catch</span> (<span class="ac">IOException</span> e)
+        {
+            Console.<span class="fn">WriteLine</span>(<span class="st">"IOException: "</span> + e.Message);
+        }
+
+        Console.<span class="fn">WriteLine</span>(<span class="st">"----- App Finished -----"</span>);
+    }
+}</pre>
+      </div>
+
+      <h3 class="sub-title">C# 8+ — using Declaration (Simplified)</h3>
+      <div class="code-block">
+        <div class="code-header"><div class="code-dots"><div class="code-dot r"></div><div class="code-dot y"></div><div class="code-dot g"></div></div><span class="code-lang">C# 8+ Syntax — no braces needed</span></div>
+        <pre><span class="kw">static void</span> <span class="fn">Main</span>(<span class="kw">string</span>[] args)
+{
+    <span class="kw">using</span> <span class="cl">StreamReader</span> sr = <span class="kw">new</span> <span class="cl">StreamReader</span>(<span class="st">"test.txt"</span>);
+    <span class="cm">// sr is disposed when it goes out of scope (end of method)</span>
+    <span class="kw">string</span> content = sr.<span class="fn">ReadToEnd</span>();
+    Console.<span class="fn">WriteLine</span>(content);
+}</pre>
+      </div>
+
+      <div class="callout callout-note">
+        <p><strong>Any class implementing <code>IDisposable</code></strong> can be used with <code>using</code>: <code>StreamReader</code>, <code>SqlConnection</code>, <code>HttpClient</code>, <code>FileStream</code>, and your own classes if they implement the interface.</p>
+      </div>
+    </section>
+
+    <!-- ── 11. Custom Exceptions ── -->
+    <section class="section">
+      <h2 class="sec-title" id="custom">User-Defined Custom Exceptions</h2>
+      <p>When built-in exceptions don't describe your specific error condition, create a <strong>custom exception class</strong>.</p>
+
+      <h3 class="sub-title">Steps to Create a Custom Exception</h3>
+      <ol class="steps">
+        <li>Create a class that <strong>extends <code>Exception</code></strong> (or <code>ApplicationException</code>).</li>
+        <li>Define <strong>constructors</strong> — at minimum a default one and one accepting a message string.</li>
+        <li>Use the <code>throw</code> keyword to throw it when the specific condition occurs.</li>
+        <li>Handle it using <code>try-catch</code> in the calling code.</li>
+      </ol>
+
+      <div class="code-block">
+        <div class="code-header"><div class="code-dots"><div class="code-dot r"></div><div class="code-dot y"></div><div class="code-dot g"></div></div><span class="code-lang">Example — Banking Application</span></div>
+        <pre><span class="kw">using</span> System;
+
+<span class="cm">// Step 1: Define the custom exception</span>
+<span class="kw">class</span> <span class="cl">InsufficientBalanceException</span> : <span class="cl">Exception</span>
+{
+    <span class="kw">public</span> <span class="fn">InsufficientBalanceException</span>() : <span class="kw">base</span>(<span class="st">"Insufficient balance."</span>) { }
+
+    <span class="kw">public</span> <span class="fn">InsufficientBalanceException</span>(<span class="kw">string</span> message) : <span class="kw">base</span>(message) { }
+
+    <span class="kw">public</span> <span class="fn">InsufficientBalanceException</span>(<span class="kw">string</span> message, <span class="cl">Exception</span> inner)
+        : <span class="kw">base</span>(message, inner) { }
+}
+
+<span class="cm">// Step 2: Use it in a class</span>
+<span class="kw">class</span> <span class="cl">BankAccount</span>
+{
+    <span class="kw">private double</span> balance;
+
+    <span class="kw">public</span> <span class="fn">BankAccount</span>(<span class="kw">double</span> balance) { <span class="kw">this</span>.balance = balance; }
+
+    <span class="kw">public void</span> <span class="fn">Withdraw</span>(<span class="kw">double</span> amount)
+    {
+        <span class="kw">if</span> (amount > balance)
+            <span class="kw">throw new</span> <span class="ac">InsufficientBalanceException</span>(
+                <span class="st">"Withdrawal failed! ₹"</span> + amount + <span class="st">" exceeds balance ₹"</span> + balance);
+
+        balance -= amount;
+        Console.<span class="fn">WriteLine</span>(<span class="st">"Successful. Remaining: ₹"</span> + balance);
+    }
+}
+
+<span class="cm">// Step 3: Handle the custom exception</span>
+<span class="kw">class</span> <span class="cl">Program</span>
+{
+    <span class="kw">static void</span> <span class="fn">Main</span>(<span class="kw">string</span>[] args)
+    {
+        <span class="cl">BankAccount</span> account = <span class="kw">new</span> <span class="cl">BankAccount</span>(<span class="nm">5000</span>);
+
+        <span class="kw">try</span> { account.<span class="fn">Withdraw</span>(<span class="nm">6000</span>); }   <span class="cm">// exceeds balance</span>
+        <span class="kw">catch</span> (<span class="ac">InsufficientBalanceException</span> e)
+            { Console.<span class="fn">WriteLine</span>(<span class="st">"Caught: "</span> + e.Message); }
+
+        <span class="kw">try</span> { account.<span class="fn">Withdraw</span>(<span class="nm">3000</span>); }   <span class="cm">// valid</span>
+        <span class="kw">catch</span> (<span class="ac">InsufficientBalanceException</span> e)
+            { Console.<span class="fn">WriteLine</span>(<span class="st">"Caught: "</span> + e.Message); }
+    }
+}</pre>
+      </div>
+
+      <h3 class="sub-title">Recommended Custom Exception Template</h3>
+      <div class="code-block">
+        <div class="code-header"><div class="code-dots"><div class="code-dot r"></div><div class="code-dot y"></div><div class="code-dot g"></div></div><span class="code-lang">Best-practice template</span></div>
+        <pre>[<span class="cl">Serializable</span>]
+<span class="kw">public class</span> <span class="cl">MyCustomException</span> : <span class="cl">Exception</span>
+{
+    <span class="kw">public</span> <span class="fn">MyCustomException</span>() { }
+
+    <span class="kw">public</span> <span class="fn">MyCustomException</span>(<span class="kw">string</span> message)
+        : <span class="kw">base</span>(message) { }
+
+    <span class="kw">public</span> <span class="fn">MyCustomException</span>(<span class="kw">string</span> message, <span class="cl">Exception</span> innerException)
+        : <span class="kw">base</span>(message, innerException) { }
+}</pre>
+      </div>
+      <div class="callout callout-note">
+        <p>The <code>[Serializable]</code> attribute and <strong>three-constructor pattern</strong> is the recommended .NET standard for custom exceptions.</p>
+      </div>
+    </section>
+
+    <!-- ── 12. Propagation ── -->
+    <section class="section">
+      <h2 class="sec-title" id="propagation">Exception Propagation</h2>
+      <p>C# has <strong>no <code>throws</code> keyword</strong>. If a method does not handle an exception, it <strong>propagates automatically</strong> up the call stack to the caller.</p>
+
+      <div class="code-block">
+        <div class="code-header"><div class="code-dots"><div class="code-dot r"></div><div class="code-dot y"></div><div class="code-dot g"></div></div><span class="code-lang">Example</span></div>
+        <pre><span class="kw">static void</span> <span class="fn">MethodC</span>() { <span class="kw">throw new</span> <span class="ac">InvalidOperationException</span>(<span class="st">"Broke in C!"</span>); }
+<span class="kw">static void</span> <span class="fn">MethodB</span>() { <span class="fn">MethodC</span>(); }   <span class="cm">// propagates up</span>
+<span class="kw">static void</span> <span class="fn">MethodA</span>() { <span class="fn">MethodB</span>(); }   <span class="cm">// propagates up</span>
+
+<span class="kw">static void</span> <span class="fn">Main</span>(<span class="kw">string</span>[] args)
+{
+    <span class="kw">try</span>   { <span class="fn">MethodA</span>(); }
+    <span class="kw">catch</span> (<span class="ac">InvalidOperationException</span> e)
+        { Console.<span class="fn">WriteLine</span>(<span class="st">"Caught in Main: "</span> + e.Message); }
+}</pre>
+      </div>
+
+      <div class="flow">
+<span class="flow-box">MethodC()</span>  <span class="flow-arrow">← exception thrown here</span>
+    ↑
+<span class="flow-box">MethodB()</span>  <span class="flow-arrow">← propagates up</span>
+    ↑
+<span class="flow-box">MethodA()</span>  <span class="flow-arrow">← propagates up</span>
+    ↑
+<span class="flow-box">Main()</span>     <span class="flow-arrow">← caught here ✅</span>
+      </div>
+      <div class="callout callout-warn">
+        <p>If the exception is <strong>not caught anywhere</strong> in the call stack, the CLR terminates the program with an unhandled exception error.</p>
+      </div>
+    </section>
+
+    <!-- ── 13. InnerException ── -->
+    <section class="section">
+      <h2 class="sec-title" id="inner">InnerException — Wrapping Exceptions</h2>
+      <p>When catching an exception and throwing a new one, you can <strong>wrap the original</strong> as an <code>InnerException</code>. This preserves the root cause for debugging.</p>
+
+      <div class="code-block">
+        <div class="code-header"><div class="code-dots"><div class="code-dot r"></div><div class="code-dot y"></div><div class="code-dot g"></div></div><span class="code-lang">Example</span></div>
+        <pre><span class="kw">static void</span> <span class="fn">LoadConfig</span>()
+{
+    <span class="kw">try</span>
+    {
+        <span class="kw">string</span> data = File.<span class="fn">ReadAllText</span>(<span class="st">"config.json"</span>);
+    }
+    <span class="kw">catch</span> (<span class="ac">IOException</span> e)
+    {
+        <span class="kw">throw new</span> <span class="ac">ApplicationException</span>(<span class="st">"Failed to load config."</span>, e);
+        <span class="cm">// original IOException is now e.InnerException</span>
+    }
+}
+
+<span class="kw">static void</span> <span class="fn">Main</span>(<span class="kw">string</span>[] args)
+{
+    <span class="kw">try</span>   { <span class="fn">LoadConfig</span>(); }
+    <span class="kw">catch</span> (<span class="ac">ApplicationException</span> e)
+    {
+        Console.<span class="fn">WriteLine</span>(<span class="st">"Error     : "</span> + e.Message);
+        Console.<span class="fn">WriteLine</span>(<span class="st">"Root Cause: "</span> + e.InnerException?.Message);
+    }
+}</pre>
+      </div>
+    </section>
+
+    <!-- ── 14. Flow Diagram ── -->
+    <section class="section">
+      <h2 class="sec-title" id="flow">Complete Execution Flow</h2>
+      <div class="flow">
+<span class="flow-note">Program reaches try block</span>
+         │
+         ▼
+┌─────────────────────────┐
+│       try block         │──── <span class="flow-arrow">No Exception</span> ──────────────────────┐
+│   (risky code runs)     │                                          │
+└─────────────────────────┘                                          │
+         │                                                           │
+    <span class="flow-arrow">Exception occurs</span>                                              │
+         │                                                           │
+         ▼                                                           │
+┌─────────────────────────┐                                          │
+│   Match catch block?    │──── <span class="flow-arrow">No Match</span> ──► Exception propagates up│
+└─────────────────────────┘                                          │
+         │ <span class="flow-arrow">Yes</span>                                                       │
+         ▼                                                           │
+┌─────────────────────────┐                                          │
+│  Matching catch block   │                                          │
+│  executes               │                                          │
+└─────────────────────────┘                                          │
+         │                                                           │
+         └──────────────────────┬──────────────────────────────────┘
+                                │
+                                ▼
+               ┌────────────────────────────┐
+               │      finally block         │  <span class="flow-arrow">← Always executes</span>
+               │   (cleanup code runs)      │
+               └────────────────────────────┘
+                                │
+                                ▼
+               <span class="flow-box">Continue with rest of program</span>
+      </div>
+    </section>
+
+    <!-- ── 15. Summary ── -->
+    <section class="section">
+      <h2 class="sec-title" id="summary">Summary Table</h2>
+      <div class="tbl-wrap">
+        <table>
+          <thead><tr><th>Feature</th><th>C#</th></tr></thead>
+          <tbody>
+            <tr><td>Base exception class</td><td><code>System.Exception</code></td></tr>
+            <tr><td>Checked exceptions</td><td><span class="no">✗ Not present in C#</span></td></tr>
+            <tr><td>All exceptions are unchecked</td><td><span class="yes">✓ Yes</span></td></tr>
+            <tr><td><code>throws</code> declaration</td><td><span class="no">✗ Not available</span></td></tr>
+            <tr><td><code>throw</code> keyword</td><td><span class="yes">✓</span> <code>throw new ExceptionType()</code></td></tr>
+            <tr><td>Re-throw (preserve stack trace)</td><td><span class="yes">✓</span> bare <code>throw;</code></td></tr>
+            <tr><td><code>finally</code> block</td><td><span class="yes">✓ Always executes</span></td></tr>
+            <tr><td>Auto resource management</td><td><span class="yes">✓</span> <code>using</code> statement / <code>IDisposable</code></td></tr>
+            <tr><td>Exception filters</td><td><span class="yes">✓</span> <code>catch (Exception e) when (condition)</code></td></tr>
+            <tr><td>Custom exceptions</td><td><span class="yes">✓</span> Extend <code>Exception</code> or <code>ApplicationException</code></td></tr>
+            <tr><td>Inner exception (root cause)</td><td><span class="yes">✓</span> <code>new Exception("msg", innerEx)</code></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+  </main>
+</div>
+
+<script>
+// Active sidebar link on scroll
+const links = document.querySelectorAll('.sidebar-link');
+const observer = new IntersectionObserver(entries => {
+  entries.forEach(entry => {
+    if (entry.isIntersecting) {
+      links.forEach(l => l.classList.remove('active'));
+      const id = entry.target.id;
+      const active = document.querySelector(`.sidebar-link[href="#${id}"]`);
+      if (active) active.classList.add('active');
+    }
+  });
+}, { rootMargin: '-20% 0px -70% 0px' });
+document.querySelectorAll('[id]').forEach(el => observer.observe(el));
+</script>
+</body>
+</html>

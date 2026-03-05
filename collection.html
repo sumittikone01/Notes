@@ -1,0 +1,1761 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>C# Collections — Deep Notes</title>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;700&family=Playfair+Display:wght@700;900&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0a0d14;
+    --surface: #111520;
+    --surface2: #161b2e;
+    --border: #1e2640;
+    --accent: #4f8ef7;
+    --accent2: #a78bfa;
+    --accent3: #34d399;
+    --accent4: #f59e0b;
+    --accent5: #f87171;
+    --text: #e2e8f0;
+    --muted: #64748b;
+    --code-bg: #0d1117;
+    --highlight: #1e3a5f;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 15px;
+    line-height: 1.7;
+    min-height: 100vh;
+  }
+
+  /* Animated background */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background:
+      radial-gradient(ellipse 80% 50% at 20% 10%, rgba(79,142,247,0.07) 0%, transparent 60%),
+      radial-gradient(ellipse 60% 40% at 80% 80%, rgba(167,139,250,0.06) 0%, transparent 60%);
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .container { max-width: 1100px; margin: 0 auto; padding: 0 24px; position: relative; z-index: 1; }
+
+  /* HERO */
+  .hero {
+    padding: 72px 0 48px;
+    border-bottom: 1px solid var(--border);
+    position: relative;
+    overflow: hidden;
+  }
+  .hero-tag {
+    display: inline-block;
+    background: rgba(79,142,247,0.12);
+    color: var(--accent);
+    border: 1px solid rgba(79,142,247,0.3);
+    border-radius: 4px;
+    padding: 4px 12px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    margin-bottom: 20px;
+  }
+  .hero h1 {
+    font-family: 'Playfair Display', serif;
+    font-size: clamp(36px, 6vw, 68px);
+    font-weight: 900;
+    line-height: 1.05;
+    letter-spacing: -1px;
+    background: linear-gradient(135deg, #e2e8f0 30%, var(--accent) 60%, var(--accent2) 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    margin-bottom: 16px;
+  }
+  .hero-sub {
+    color: var(--muted);
+    font-size: 16px;
+    max-width: 600px;
+    font-weight: 300;
+  }
+  .hero-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+    gap: 12px;
+    margin-top: 36px;
+  }
+  .hero-chip {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 10px 14px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    color: var(--accent3);
+    text-align: center;
+    transition: border-color 0.2s;
+  }
+  .hero-chip:hover { border-color: var(--accent3); }
+
+  /* TOC */
+  .toc {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 28px 32px;
+    margin: 40px 0;
+  }
+  .toc h3 { font-family: 'JetBrains Mono', monospace; font-size: 11px; letter-spacing: 2px; text-transform: uppercase; color: var(--muted); margin-bottom: 16px; }
+  .toc-list { list-style: none; display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 6px 24px; }
+  .toc-list li a {
+    color: var(--accent);
+    text-decoration: none;
+    font-size: 14px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 4px 0;
+    transition: color 0.2s;
+  }
+  .toc-list li a:hover { color: #fff; }
+  .toc-list li a::before { content: '→'; font-family: monospace; color: var(--muted); }
+
+  /* SECTION */
+  .section {
+    padding: 56px 0 32px;
+    border-bottom: 1px solid var(--border);
+  }
+  .section-header {
+    display: flex;
+    align-items: flex-start;
+    gap: 16px;
+    margin-bottom: 32px;
+  }
+  .section-num {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    color: var(--muted);
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 3px 8px;
+    white-space: nowrap;
+    margin-top: 6px;
+  }
+  .section h2 {
+    font-family: 'Playfair Display', serif;
+    font-size: clamp(24px, 4vw, 38px);
+    font-weight: 700;
+    line-height: 1.2;
+    background: linear-gradient(135deg, #e2e8f0, var(--accent2));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+  .section h3 {
+    font-size: 18px;
+    font-weight: 600;
+    color: var(--accent4);
+    margin: 28px 0 12px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .section h3::before { content: '◆'; font-size: 10px; }
+  .section p { color: #94a3b8; margin-bottom: 14px; }
+
+  /* CODE */
+  pre {
+    background: var(--code-bg);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 20px 24px;
+    overflow-x: auto;
+    margin: 16px 0;
+    position: relative;
+  }
+  pre::before {
+    content: attr(data-lang);
+    position: absolute;
+    top: 10px; right: 14px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    color: var(--muted);
+    letter-spacing: 1px;
+    text-transform: uppercase;
+  }
+  code {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 13px;
+    line-height: 1.8;
+  }
+  .kw { color: #c084fc; }
+  .type { color: #60a5fa; }
+  .str { color: #86efac; }
+  .num { color: #fbbf24; }
+  .cm { color: #475569; font-style: italic; }
+  .fn { color: #f472b6; }
+  .var { color: #e2e8f0; }
+  .op { color: #94a3b8; }
+
+  /* DIAGRAMS */
+  .diagram {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 28px;
+    margin: 20px 0;
+    overflow-x: auto;
+  }
+  .diagram-title {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 20px;
+  }
+
+  /* Array diagram */
+  .array-vis {
+    display: flex;
+    gap: 0;
+    align-items: stretch;
+    font-family: 'JetBrains Mono', monospace;
+  }
+  .array-cell {
+    border: 1px solid var(--accent);
+    min-width: 56px;
+    padding: 10px 8px;
+    text-align: center;
+    font-size: 14px;
+    color: var(--accent3);
+    position: relative;
+    background: rgba(79,142,247,0.06);
+    transition: background 0.2s;
+  }
+  .array-cell:hover { background: rgba(79,142,247,0.15); }
+  .array-cell .idx {
+    position: absolute;
+    top: -20px;
+    left: 50%;
+    transform: translateX(-50%);
+    font-size: 10px;
+    color: var(--muted);
+  }
+  .array-indices { margin-bottom: 22px; }
+
+  /* Linked List */
+  .ll-vis {
+    display: flex;
+    align-items: center;
+    gap: 0;
+    flex-wrap: wrap;
+    font-family: 'JetBrains Mono', monospace;
+  }
+  .ll-node {
+    display: flex;
+    border: 1px solid var(--accent2);
+    border-radius: 6px;
+    overflow: hidden;
+    font-size: 12px;
+  }
+  .ll-data {
+    padding: 8px 12px;
+    background: rgba(167,139,250,0.1);
+    color: var(--accent2);
+    border-right: 1px solid var(--accent2);
+    min-width: 40px;
+    text-align: center;
+  }
+  .ll-next {
+    padding: 8px 10px;
+    color: var(--accent4);
+    font-size: 11px;
+    background: rgba(245,158,11,0.06);
+  }
+  .ll-arrow {
+    font-size: 20px;
+    color: var(--accent4);
+    padding: 0 6px;
+    align-self: center;
+  }
+  .ll-null {
+    padding: 8px 12px;
+    border: 1px dashed var(--muted);
+    border-radius: 4px;
+    color: var(--muted);
+    font-size: 12px;
+    align-self: center;
+  }
+
+  /* HashMap buckets */
+  .hashmap-vis {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    gap: 6px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+  }
+  .bucket-idx {
+    background: rgba(79,142,247,0.1);
+    border: 1px solid rgba(79,142,247,0.3);
+    border-radius: 4px;
+    padding: 6px 10px;
+    color: var(--accent);
+    text-align: center;
+    min-width: 36px;
+  }
+  .bucket-content {
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 6px 12px;
+    display: flex;
+    gap: 12px;
+    align-items: center;
+    flex-wrap: wrap;
+  }
+  .bucket-empty { color: var(--muted); }
+  .kv-pair {
+    background: rgba(52,211,153,0.08);
+    border: 1px solid rgba(52,211,153,0.2);
+    border-radius: 4px;
+    padding: 3px 8px;
+    color: var(--accent3);
+  }
+  .kv-chain {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .chain-arrow { color: var(--accent4); }
+
+  /* Stack/Queue */
+  .stack-vis {
+    display: inline-flex;
+    flex-direction: column-reverse;
+    gap: 3px;
+    font-family: 'JetBrains Mono', monospace;
+  }
+  .stack-item {
+    border: 1px solid var(--accent5);
+    background: rgba(248,113,113,0.08);
+    color: var(--accent5);
+    padding: 8px 24px;
+    border-radius: 4px;
+    font-size: 13px;
+    text-align: center;
+    position: relative;
+    transition: background 0.2s;
+  }
+  .stack-item.top {
+    border-color: var(--accent3);
+    background: rgba(52,211,153,0.12);
+    color: var(--accent3);
+  }
+  .stack-item.top::after {
+    content: '← TOP (Push/Pop here)';
+    position: absolute;
+    right: -190px;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 10px;
+    color: var(--accent3);
+    white-space: nowrap;
+  }
+
+  .queue-vis {
+    display: flex;
+    gap: 3px;
+    font-family: 'JetBrains Mono', monospace;
+    align-items: center;
+  }
+  .queue-item {
+    border: 1px solid var(--accent);
+    background: rgba(79,142,247,0.08);
+    color: var(--accent);
+    padding: 10px 18px;
+    font-size: 13px;
+    text-align: center;
+  }
+  .queue-front-label, .queue-rear-label {
+    font-size: 10px;
+    color: var(--muted);
+    text-align: center;
+    margin-top: 4px;
+  }
+  .q-wrapper { display: flex; flex-direction: column; }
+  .q-wrapper.front .queue-item { border-color: var(--accent3); color: var(--accent3); background: rgba(52,211,153,0.1); }
+  .q-wrapper.rear .queue-item { border-color: var(--accent5); color: var(--accent5); background: rgba(248,113,113,0.08); }
+
+  /* Tree */
+  .tree-vis {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 13px;
+    line-height: 2;
+    color: var(--accent2);
+    white-space: pre;
+  }
+  .tree-node-circle {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    border: 2px solid var(--accent2);
+    background: rgba(167,139,250,0.1);
+    color: var(--accent2);
+    font-size: 12px;
+    font-family: 'JetBrains Mono', monospace;
+    margin: 2px;
+  }
+
+  /* PERFORMANCE TABLE */
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    margin: 16px 0;
+  }
+  th {
+    background: var(--surface2);
+    color: var(--accent);
+    padding: 10px 14px;
+    text-align: left;
+    border: 1px solid var(--border);
+    font-size: 11px;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+  }
+  td {
+    padding: 9px 14px;
+    border: 1px solid var(--border);
+    color: #94a3b8;
+  }
+  tr:hover td { background: rgba(79,142,247,0.04); }
+  .o-1 { color: var(--accent3); font-weight: 600; }
+  .o-n { color: var(--accent4); }
+  .o-logn { color: var(--accent); }
+  .o-bad { color: var(--accent5); }
+
+  /* INFO BOXES */
+  .info-box {
+    border-radius: 10px;
+    padding: 18px 22px;
+    margin: 16px 0;
+    border-left: 3px solid;
+    font-size: 14px;
+  }
+  .info-box.note { background: rgba(79,142,247,0.07); border-color: var(--accent); }
+  .info-box.warn { background: rgba(245,158,11,0.07); border-color: var(--accent4); }
+  .info-box.tip { background: rgba(52,211,153,0.07); border-color: var(--accent3); }
+  .info-box.danger { background: rgba(248,113,113,0.07); border-color: var(--accent5); }
+  .info-box strong { display: block; margin-bottom: 4px; font-family: 'JetBrains Mono', monospace; font-size: 11px; letter-spacing: 1px; text-transform: uppercase; }
+  .info-box.note strong { color: var(--accent); }
+  .info-box.warn strong { color: var(--accent4); }
+  .info-box.tip strong { color: var(--accent3); }
+  .info-box.danger strong { color: var(--accent5); }
+
+  /* COMPARISON GRID */
+  .cmp-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 14px;
+    margin: 20px 0;
+  }
+  .cmp-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 18px;
+    transition: border-color 0.2s, transform 0.2s;
+  }
+  .cmp-card:hover { border-color: var(--accent); transform: translateY(-2px); }
+  .cmp-card h4 {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 13px;
+    color: var(--accent);
+    margin-bottom: 10px;
+  }
+  .cmp-card ul { list-style: none; }
+  .cmp-card ul li {
+    font-size: 12px;
+    color: #94a3b8;
+    padding: 2px 0;
+    padding-left: 14px;
+    position: relative;
+  }
+  .cmp-card ul li::before { content: '·'; position: absolute; left: 0; color: var(--accent3); }
+
+  /* HASH FUNCTION FLOW */
+  .flow {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    margin: 16px 0;
+  }
+  .flow-box {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 10px 16px;
+    color: var(--text);
+    white-space: nowrap;
+  }
+  .flow-arrow { color: var(--accent4); font-size: 18px; }
+  .flow-box.highlight { border-color: var(--accent); color: var(--accent); background: rgba(79,142,247,0.08); }
+  .flow-box.result { border-color: var(--accent3); color: var(--accent3); background: rgba(52,211,153,0.08); }
+
+  /* REHASH DIAGRAM */
+  .rehash-vis {
+    display: flex;
+    gap: 32px;
+    flex-wrap: wrap;
+    align-items: flex-start;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+  }
+  .rehash-table { }
+  .rehash-table h5 { color: var(--muted); font-size: 10px; letter-spacing: 1px; text-transform: uppercase; margin-bottom: 8px; }
+  .r-bucket { display: flex; gap: 6px; align-items: center; margin-bottom: 4px; }
+  .r-idx { background: rgba(79,142,247,0.1); border: 1px solid rgba(79,142,247,0.25); padding: 3px 7px; border-radius: 3px; color: var(--accent); min-width: 28px; text-align: center; }
+  .r-item { background: rgba(52,211,153,0.08); border: 1px solid rgba(52,211,153,0.2); border-radius: 3px; padding: 3px 8px; color: var(--accent3); }
+  .r-arrow { color: var(--accent4); font-size: 20px; }
+
+  /* SORTED SET tree */
+  .rbt-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+  }
+  .rbt-row { display: flex; gap: 24px; justify-content: center; }
+  .rbt-node {
+    width: 40px; height: 40px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 600;
+    font-size: 13px;
+    position: relative;
+  }
+  .rbt-node.black { background: #1e293b; border: 2px solid #475569; color: #94a3b8; }
+  .rbt-node.red { background: rgba(248,113,113,0.15); border: 2px solid var(--accent5); color: var(--accent5); }
+  .rbt-connector {
+    display: flex;
+    justify-content: space-around;
+    width: 100%;
+    color: var(--muted);
+    font-size: 18px;
+  }
+
+  /* Priority Queue */
+  .heap-vis {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 13px;
+  }
+  .heap-row { display: flex; gap: 10px; }
+  .heap-node {
+    width: 44px; height: 44px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 2px solid var(--accent4);
+    background: rgba(245,158,11,0.1);
+    color: var(--accent4);
+    font-weight: 600;
+  }
+  .heap-node.root { border-color: var(--accent3); background: rgba(52,211,153,0.15); color: var(--accent3); font-size: 15px; }
+
+  /* Immutable collections */
+  .immut-vis {
+    display: flex;
+    gap: 24px;
+    align-items: flex-start;
+    flex-wrap: wrap;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+  }
+  .immut-ver { }
+  .immut-ver h5 { color: var(--muted); font-size: 10px; margin-bottom: 6px; text-transform: uppercase; letter-spacing: 1px; }
+  .immut-arr { display: flex; gap: 2px; }
+  .immut-cell {
+    border: 1px solid var(--accent2);
+    background: rgba(167,139,250,0.07);
+    color: var(--accent2);
+    padding: 8px 10px;
+    min-width: 36px;
+    text-align: center;
+    border-radius: 3px;
+  }
+  .immut-cell.new { border-color: var(--accent3); background: rgba(52,211,153,0.1); color: var(--accent3); }
+  .immut-cell.shared { opacity: 0.5; }
+
+  /* Highlight row */
+  .badge {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+  }
+  .badge-blue { background: rgba(79,142,247,0.15); color: var(--accent); border: 1px solid rgba(79,142,247,0.3); }
+  .badge-green { background: rgba(52,211,153,0.1); color: var(--accent3); border: 1px solid rgba(52,211,153,0.25); }
+  .badge-yellow { background: rgba(245,158,11,0.1); color: var(--accent4); border: 1px solid rgba(245,158,11,0.25); }
+  .badge-red { background: rgba(248,113,113,0.1); color: var(--accent5); border: 1px solid rgba(248,113,113,0.25); }
+
+  /* Two-col layout */
+  .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+  @media(max-width: 640px) { .two-col { grid-template-columns: 1fr; } }
+
+  /* Footer */
+  footer {
+    text-align: center;
+    padding: 48px 0;
+    color: var(--muted);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 1px;
+  }
+
+  /* Scrollbar */
+  ::-webkit-scrollbar { width: 6px; height: 6px; }
+  ::-webkit-scrollbar-track { background: var(--bg); }
+  ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+  ::-webkit-scrollbar-thumb:hover { background: var(--muted); }
+
+  /* Fade-in animation */
+  .section { animation: fadeUp 0.4s ease both; }
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(16px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .inline-code {
+    font-family: 'JetBrains Mono', monospace;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 3px;
+    padding: 1px 6px;
+    font-size: 12px;
+    color: var(--accent3);
+  }
+
+  .growth-note {
+    font-size: 12px;
+    color: var(--muted);
+    font-family: 'JetBrains Mono', monospace;
+    text-align: center;
+    margin-top: 12px;
+  }
+
+  .capacity-bar {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    overflow: hidden;
+    height: 24px;
+    margin: 8px 0;
+    position: relative;
+  }
+  .capacity-fill {
+    height: 100%;
+    display: flex;
+    align-items: center;
+    padding-left: 8px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    transition: width 0.5s;
+  }
+</style>
+</head>
+<body>
+
+<div class="container">
+
+  <!-- HERO -->
+  <div class="hero">
+    <div class="hero-tag">C# · .NET · Deep Notes</div>
+    <h1>C# Collections<br>Master Reference</h1>
+    <p class="hero-sub">Every collection, how it works under the hood, time complexities, diagrams, and when to use each one.</p>
+    <div class="hero-grid">
+      <div class="hero-chip">List&lt;T&gt;</div>
+      <div class="hero-chip">Dictionary&lt;K,V&gt;</div>
+      <div class="hero-chip">HashSet&lt;T&gt;</div>
+      <div class="hero-chip">LinkedList&lt;T&gt;</div>
+      <div class="hero-chip">Stack&lt;T&gt;</div>
+      <div class="hero-chip">Queue&lt;T&gt;</div>
+      <div class="hero-chip">SortedSet&lt;T&gt;</div>
+      <div class="hero-chip">SortedDictionary</div>
+      <div class="hero-chip">PriorityQueue</div>
+      <div class="hero-chip">ConcurrentDict</div>
+      <div class="hero-chip">ImmutableList</div>
+      <div class="hero-chip">Span&lt;T&gt;</div>
+    </div>
+  </div>
+
+  <!-- TOC -->
+  <div class="toc">
+    <h3>Table of Contents</h3>
+    <ul class="toc-list">
+      <li><a href="#overview">Collections Overview</a></li>
+      <li><a href="#array">Arrays</a></li>
+      <li><a href="#list">List&lt;T&gt;</a></li>
+      <li><a href="#linkedlist">LinkedList&lt;T&gt;</a></li>
+      <li><a href="#dictionary">Dictionary&lt;K,V&gt;</a></li>
+      <li><a href="#hashset">HashSet&lt;T&gt;</a></li>
+      <li><a href="#stack">Stack&lt;T&gt;</a></li>
+      <li><a href="#queue">Queue&lt;T&gt;</a></li>
+      <li><a href="#sortedset">SortedSet &amp; SortedDictionary</a></li>
+      <li><a href="#priority">PriorityQueue&lt;T,P&gt;</a></li>
+      <li><a href="#concurrent">Concurrent Collections</a></li>
+      <li><a href="#immutable">Immutable Collections</a></li>
+      <li><a href="#span">Span&lt;T&gt; &amp; Memory&lt;T&gt;</a></li>
+      <li><a href="#complexity">Big-O Cheat Sheet</a></li>
+    </ul>
+  </div>
+
+  <!-- ═══════════════════ SECTION 1: Overview ═══════════════════ -->
+  <div class="section" id="overview">
+    <div class="section-header">
+      <span class="section-num">01</span>
+      <div><h2>Collections Overview</h2></div>
+    </div>
+
+    <p>C# collections live in two main namespaces: <span class="inline-code">System.Collections.Generic</span> (type-safe, modern) and <span class="inline-code">System.Collections</span> (legacy, non-generic). Always prefer generic collections.</p>
+
+    <div class="diagram">
+      <div class="diagram-title">C# Collection Hierarchy</div>
+      <div class="tree-vis">
+<span style="color:#4f8ef7">IEnumerable&lt;T&gt;</span>
+  └── <span style="color:#a78bfa">ICollection&lt;T&gt;</span>
+        ├── <span style="color:#34d399">IList&lt;T&gt;</span>
+        │     ├── <span style="color:#fbbf24">List&lt;T&gt;</span>          → Dynamic array
+        │     └── <span style="color:#fbbf24">T[]</span>              → Fixed array
+        ├── <span style="color:#34d399">ISet&lt;T&gt;</span>
+        │     ├── <span style="color:#fbbf24">HashSet&lt;T&gt;</span>       → Hash table
+        │     └── <span style="color:#fbbf24">SortedSet&lt;T&gt;</span>    → Red-Black Tree
+        └── <span style="color:#34d399">IDictionary&lt;K,V&gt;</span>
+              ├── <span style="color:#fbbf24">Dictionary&lt;K,V&gt;</span> → Hash table
+              └── <span style="color:#fbbf24">SortedDictionary</span> → Red-Black Tree
+
+<span style="color:#4f8ef7">Other important</span>
+  ├── <span style="color:#fbbf24">Stack&lt;T&gt;</span>           → LIFO  (array-backed)
+  ├── <span style="color:#fbbf24">Queue&lt;T&gt;</span>           → FIFO  (circular array)
+  ├── <span style="color:#fbbf24">LinkedList&lt;T&gt;</span>      → Doubly linked list
+  ├── <span style="color:#fbbf24">PriorityQueue&lt;T,P&gt;</span> → Min-Heap  (.NET 6+)
+  └── <span style="color:#fbbf24">Span&lt;T&gt; / Memory&lt;T&gt;</span>→ Stack/heap slices</div>
+    </div>
+
+    <div class="info-box tip">
+      <strong>Key Insight</strong>
+      Every generic collection implements <span class="inline-code">IEnumerable&lt;T&gt;</span>, meaning you can use <span class="inline-code">foreach</span> and all LINQ operators on all of them.
+    </div>
+  </div>
+
+  <!-- ═══════════════════ SECTION 2: Arrays ═══════════════════ -->
+  <div class="section" id="array">
+    <div class="section-header">
+      <span class="section-num">02</span>
+      <div><h2>Arrays — T[]</h2></div>
+    </div>
+
+    <p>The most primitive, most performant collection. Fixed size, contiguous memory block. Zero-indexed. A 2D array is laid out in row-major order in memory.</p>
+
+    <h3>Memory Layout</h3>
+    <div class="diagram">
+      <div class="diagram-title">int[] arr = {10, 20, 30, 40, 50} — Contiguous Memory</div>
+      <div class="array-indices">
+        <div style="display:flex; gap:0; font-family: 'JetBrains Mono', monospace; margin-bottom: 4px; padding-left:4px;">
+          <div style="min-width:56px; text-align:center; font-size:10px; color:var(--muted)">idx[0]</div>
+          <div style="min-width:56px; text-align:center; font-size:10px; color:var(--muted)">idx[1]</div>
+          <div style="min-width:56px; text-align:center; font-size:10px; color:var(--muted)">idx[2]</div>
+          <div style="min-width:56px; text-align:center; font-size:10px; color:var(--muted)">idx[3]</div>
+          <div style="min-width:56px; text-align:center; font-size:10px; color:var(--muted)">idx[4]</div>
+        </div>
+        <div class="array-vis">
+          <div class="array-cell">10</div>
+          <div class="array-cell">20</div>
+          <div class="array-cell">30</div>
+          <div class="array-cell">40</div>
+          <div class="array-cell">50</div>
+        </div>
+        <div style="display:flex; gap:0; font-family: 'JetBrains Mono', monospace; margin-top: 4px; padding-left:4px;">
+          <div style="min-width:56px; text-align:center; font-size:10px; color:var(--accent)">0x00</div>
+          <div style="min-width:56px; text-align:center; font-size:10px; color:var(--accent)">0x04</div>
+          <div style="min-width:56px; text-align:center; font-size:10px; color:var(--accent)">0x08</div>
+          <div style="min-width:56px; text-align:center; font-size:10px; color:var(--accent)">0x0C</div>
+          <div style="min-width:56px; text-align:center; font-size:10px; color:var(--accent)">0x10</div>
+        </div>
+      </div>
+      <p style="font-family:monospace; font-size:12px; color:var(--muted); margin-top:10px;">
+        Address of element i = BaseAddress + (i × sizeof(T))<br>
+        O(1) random access — CPU can jump directly to any element
+      </p>
+    </div>
+
+    <pre data-lang="C#"><code><span class="cm">// Declaration & Initialization</span>
+<span class="kw">int</span>[] arr = <span class="kw">new</span> <span class="kw">int</span>[<span class="num">5</span>];
+<span class="kw">int</span>[] arr2 = { <span class="num">10</span>, <span class="num">20</span>, <span class="num">30</span>, <span class="num">40</span>, <span class="num">50</span> };
+<span class="kw">var</span> arr3 = <span class="kw">new</span> <span class="kw">int</span>[] { <span class="num">1</span>, <span class="num">2</span>, <span class="num">3</span> };
+
+<span class="cm">// Multi-dimensional</span>
+<span class="kw">int</span>[,] matrix = <span class="kw">new</span> <span class="kw">int</span>[<span class="num">3</span>, <span class="num">3</span>];  <span class="cm">// true 2D — single allocation</span>
+<span class="kw">int</span>[][] jagged = <span class="kw">new</span> <span class="kw">int</span>[<span class="num">3</span>][];  <span class="cm">// array of arrays — separate allocations</span>
+
+<span class="cm">// Sorting & Searching</span>
+<span class="type">Array</span>.<span class="fn">Sort</span>(arr2);               <span class="cm">// IntroSort (QuickSort + HeapSort + InsertionSort)</span>
+<span class="kw">int</span> idx = <span class="type">Array</span>.<span class="fn">BinarySearch</span>(arr2, <span class="num">30</span>);  <span class="cm">// O(log n) — array must be sorted</span>
+
+<span class="cm">// Copy</span>
+<span class="kw">int</span>[] copy = (<span class="kw">int</span>[])arr2.<span class="fn">Clone</span>();   <span class="cm">// shallow copy</span>
+<span class="type">Array</span>.<span class="fn">Copy</span>(arr2, copy, arr2.Length); <span class="cm">// same as above</span>
+
+<span class="cm">// Spans over arrays — zero-copy slicing</span>
+<span class="type">Span</span>&lt;<span class="kw">int</span>&gt; slice = arr2.<span class="fn">AsSpan</span>(<span class="num">1</span>, <span class="num">3</span>);  <span class="cm">// {20, 30, 40} — no allocation</span></code></pre>
+
+    <div class="info-box note">
+      <strong>Performance Note</strong>
+      Arrays have the best cache locality of all collections — the CPU prefetcher loves sequential memory. For tight loops over known-size data, raw arrays beat <span class="inline-code">List&lt;T&gt;</span> by ~10–20%.
+    </div>
+  </div>
+
+  <!-- ═══════════════════ SECTION 3: List<T> ═══════════════════ -->
+  <div class="section" id="list">
+    <div class="section-header">
+      <span class="section-num">03</span>
+      <div><h2>List&lt;T&gt; — Dynamic Array</h2></div>
+    </div>
+
+    <p>The most-used collection in C#. Internally it's a <strong>plain T[] array</strong> with a tracked <span class="inline-code">_size</span> counter. When you add beyond capacity it allocates a new array of double the size and copies everything over — this is called <em>growth/resize</em>.</p>
+
+    <h3>Internal Structure</h3>
+    <div class="diagram">
+      <div class="diagram-title">List&lt;int&gt; — Internal Array with Capacity vs Count</div>
+
+      <div style="margin-bottom: 16px; font-family: 'JetBrains Mono', monospace; font-size: 12px; color: var(--muted);">
+        <span style="color: var(--accent)">_items</span> (internal array, capacity=8) &nbsp;&nbsp; | &nbsp;&nbsp;
+        <span style="color: var(--accent3)">_size</span> (Count = 5)
+      </div>
+
+      <div style="display:flex; gap:0; align-items: stretch;">
+        <div class="array-cell" style="border-color:var(--accent3)">10</div>
+        <div class="array-cell" style="border-color:var(--accent3)">20</div>
+        <div class="array-cell" style="border-color:var(--accent3)">30</div>
+        <div class="array-cell" style="border-color:var(--accent3)">40</div>
+        <div class="array-cell" style="border-color:var(--accent3)">50</div>
+        <div class="array-cell" style="border-color:var(--muted); color:var(--muted)">—</div>
+        <div class="array-cell" style="border-color:var(--muted); color:var(--muted)">—</div>
+        <div class="array-cell" style="border-color:var(--muted); color:var(--muted)">—</div>
+      </div>
+      <div style="font-family: 'JetBrains Mono', monospace; font-size: 11px; margin-top: 8px; color: var(--muted)">
+        ↑ Used slots (Count = 5) &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; ↑ Empty reserved (Capacity = 8)
+      </div>
+    </div>
+
+    <h3>The Growth Algorithm — How Resizing Works</h3>
+    <div class="diagram">
+      <div class="diagram-title">List&lt;T&gt; Capacity Doubling</div>
+      <div style="font-family: 'JetBrains Mono', monospace; font-size: 12px;">
+        <div style="margin-bottom: 8px; color: var(--muted)">Count reaches Capacity → new array allocated (capacity × 2)</div>
+
+        <div style="margin: 6px 0;"><span style="color:var(--accent)">Add #1-4:</span>
+          <div class="capacity-bar" style="max-width:400px"><div class="capacity-fill" style="width:50%; background: linear-gradient(90deg, rgba(79,142,247,0.5), rgba(79,142,247,0.3)); color:var(--accent)">Count=4, Cap=4</div></div>
+        </div>
+        <div style="margin: 6px 0;"><span style="color:var(--accent4)">Add #5 → RESIZE!</span>
+          <div class="capacity-bar" style="max-width:400px"><div class="capacity-fill" style="width:31%; background: linear-gradient(90deg, rgba(245,158,11,0.5), rgba(245,158,11,0.2)); color:var(--accent4)">Count=5, Cap=8+new array copy</div></div>
+        </div>
+        <div style="margin: 6px 0;"><span style="color:var(--accent3)">Add #6-8:</span>
+          <div class="capacity-bar" style="max-width:400px"><div class="capacity-fill" style="width:100%; background: linear-gradient(90deg, rgba(52,211,153,0.4), rgba(52,211,153,0.15)); color:var(--accent3)">Count=8, Cap=8</div></div>
+        </div>
+        <div style="margin: 6px 0;"><span style="color:var(--accent4)">Add #9 → RESIZE again!</span>
+          <div class="capacity-bar" style="max-width:400px"><div class="capacity-fill" style="width:56%; background: linear-gradient(90deg, rgba(245,158,11,0.5), rgba(245,158,11,0.2)); color:var(--accent4)">Count=9, Cap=16</div></div>
+        </div>
+      </div>
+      <div class="growth-note">Growth sequence: 0 → 4 → 8 → 16 → 32 → 64 → 128 → ... (doubles each time)</div>
+      <div class="growth-note" style="color:var(--accent3); margin-top:4px;">Amortized O(1) Add — each element is copied at most twice on average</div>
+    </div>
+
+    <pre data-lang="C#"><code><span class="kw">var</span> list = <span class="kw">new</span> <span class="type">List</span>&lt;<span class="kw">int</span>&gt;();         <span class="cm">// Capacity=0</span>
+<span class="kw">var</span> list2 = <span class="kw">new</span> <span class="type">List</span>&lt;<span class="kw">int</span>&gt;(<span class="num">100</span>);     <span class="cm">// Capacity=100 (pre-allocate!)</span>
+
+list.<span class="fn">Add</span>(<span class="num">10</span>);                       <span class="cm">// O(1) amortized</span>
+list.<span class="fn">Insert</span>(<span class="num">0</span>, <span class="num">5</span>);                 <span class="cm">// O(n) — shifts all elements right</span>
+list.<span class="fn">Remove</span>(<span class="num">10</span>);                    <span class="cm">// O(n) — linear search + shift</span>
+list.<span class="fn">RemoveAt</span>(<span class="num">0</span>);                  <span class="cm">// O(n) — shift left</span>
+<span class="kw">int</span> x = list[<span class="num">2</span>];                    <span class="cm">// O(1) — direct index</span>
+list.<span class="fn">Contains</span>(<span class="num">10</span>);                  <span class="cm">// O(n) — linear scan</span>
+list.<span class="fn">Sort</span>();                         <span class="cm">// O(n log n) — IntroSort</span>
+list.<span class="fn">BinarySearch</span>(<span class="num">10</span>);             <span class="cm">// O(log n) — must be sorted</span>
+
+<span class="cm">// Avoid resizing: set capacity upfront if size is known</span>
+list.<span class="fn">Capacity</span> = <span class="num">500</span>;               <span class="cm">// single allocation</span>
+list.<span class="fn">TrimExcess</span>();                  <span class="cm">// shrink to Count</span>
+
+<span class="cm">// AddRange — efficient bulk add</span>
+list.<span class="fn">AddRange</span>(<span class="kw">new</span>[] { <span class="num">1</span>,<span class="num">2</span>,<span class="num">3</span>,<span class="num">4</span>,<span class="num">5</span> }); <span class="cm">// single potential resize</span></code></pre>
+
+    <div class="info-box warn">
+      <strong>Watch Out</strong>
+      <span class="inline-code">Insert(0, x)</span> and <span class="inline-code">RemoveAt(0)</span> are O(n) — they shift the entire array. If you frequently insert/remove at the front, use <span class="inline-code">LinkedList&lt;T&gt;</span> or <span class="inline-code">Queue&lt;T&gt;</span> instead.
+    </div>
+  </div>
+
+  <!-- ═══════════════════ SECTION 4: LinkedList ═══════════════════ -->
+  <div class="section" id="linkedlist">
+    <div class="section-header">
+      <span class="section-num">04</span>
+      <div><h2>LinkedList&lt;T&gt;</h2></div>
+    </div>
+
+    <p>A <strong>doubly-linked list</strong>. Each element is a <span class="inline-code">LinkedListNode&lt;T&gt;</span> object with <span class="inline-code">Value</span>, <span class="inline-code">Next</span>, and <span class="inline-code">Previous</span> pointers. No contiguous memory — each node is a separate heap allocation.</p>
+
+    <h3>Node Structure &amp; Memory</h3>
+    <div class="diagram">
+      <div class="diagram-title">LinkedList&lt;string&gt; — Doubly Linked Nodes</div>
+      <div style="overflow-x:auto; padding-bottom: 8px;">
+        <div class="ll-vis">
+          <div style="font-family: 'JetBrains Mono', monospace; font-size: 11px; color: var(--muted); margin-right: 8px;">HEAD→</div>
+          <div class="ll-node">
+            <div class="ll-data">Alice</div>
+            <div class="ll-next">prev:null<br>next→</div>
+          </div>
+          <div class="ll-arrow">⟷</div>
+          <div class="ll-node">
+            <div class="ll-data">Bob</div>
+            <div class="ll-next">←prev<br>next→</div>
+          </div>
+          <div class="ll-arrow">⟷</div>
+          <div class="ll-node">
+            <div class="ll-data">Carol</div>
+            <div class="ll-next">←prev<br>next:null</div>
+          </div>
+          <div class="ll-arrow" style="color:var(--muted)">→</div>
+          <div class="ll-null">null</div>
+          <div style="font-family: 'JetBrains Mono', monospace; font-size: 11px; color: var(--muted); margin-left: 8px;">←TAIL</div>
+        </div>
+        <div style="margin-top:12px; font-family: 'JetBrains Mono', monospace; font-size:11px; color:var(--muted);">
+          Each node: separate heap object ≈ 32 bytes overhead (object header + 3 pointers + value)
+        </div>
+      </div>
+    </div>
+
+    <pre data-lang="C#"><code><span class="kw">var</span> ll = <span class="kw">new</span> <span class="type">LinkedList</span>&lt;<span class="kw">string</span>&gt;();
+
+<span class="type">LinkedListNode</span>&lt;<span class="kw">string</span>&gt; bob = ll.<span class="fn">AddLast</span>(<span class="str">"Bob"</span>);    <span class="cm">// O(1)</span>
+ll.<span class="fn">AddFirst</span>(<span class="str">"Alice"</span>);                              <span class="cm">// O(1)</span>
+ll.<span class="fn">AddAfter</span>(bob, <span class="str">"Carol"</span>);                          <span class="cm">// O(1) — given the node</span>
+
+<span class="cm">// Traversal — O(n)</span>
+<span class="type">LinkedListNode</span>&lt;<span class="kw">string</span>&gt; node = ll.First;
+<span class="kw">while</span> (node != <span class="kw">null</span>) {
+    <span class="type">Console</span>.<span class="fn">WriteLine</span>(node.Value);
+    node = node.Next;
+}
+
+ll.<span class="fn">Remove</span>(bob);  <span class="cm">// O(1) — if you hold the node reference</span>
+ll.<span class="fn">Remove</span>(<span class="str">"Alice"</span>);  <span class="cm">// O(n) — must search first</span></code></pre>
+
+    <div class="two-col" style="margin-top:20px;">
+      <div class="cmp-card">
+        <h4>✓ USE LinkedList when</h4>
+        <ul>
+          <li>Frequent inserts/removes at both ends</li>
+          <li>Frequent inserts/removes in the middle (given a node ref)</li>
+          <li>Implementing undo/redo stacks</li>
+          <li>LRU cache implementation</li>
+        </ul>
+      </div>
+      <div class="cmp-card">
+        <h4>✗ AVOID LinkedList when</h4>
+        <ul>
+          <li>Random access is needed (O(n) each)</li>
+          <li>Memory is tight (each node = heap alloc)</li>
+          <li>Cache performance matters (poor locality)</li>
+          <li>LINQ-heavy code (prefer List)</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════ SECTION 5: Dictionary ═══════════════════ -->
+  <div class="section" id="dictionary">
+    <div class="section-header">
+      <span class="section-num">05</span>
+      <div><h2>Dictionary&lt;TKey, TValue&gt;</h2></div>
+    </div>
+
+    <p>The most important collection in .NET. Internally uses a <strong>hash table with open addressing + chaining</strong>. Gives O(1) average lookup, insert, and delete. Here's exactly how it works:</p>
+
+    <h3>Step 1: The Hash Function</h3>
+    <div class="diagram">
+      <div class="diagram-title">Key → HashCode → Bucket Index</div>
+      <div class="flow">
+        <div class="flow-box">Key: <span style="color:var(--accent3)">"Alice"</span></div>
+        <div class="flow-arrow">→</div>
+        <div class="flow-box highlight"><span style="color:var(--accent)">GetHashCode()</span><br><span style="font-size:10px; color:var(--muted)">e.g. 1847239021</span></div>
+        <div class="flow-arrow">→</div>
+        <div class="flow-box"><span style="color:var(--muted); font-size:11px">hashCode &amp; 0x7FFFFFFF</span><br><span style="font-size:10px; color:var(--muted)">make positive</span></div>
+        <div class="flow-arrow">→</div>
+        <div class="flow-box"><span style="color:var(--muted); font-size:11px">% bucketCount</span></div>
+        <div class="flow-arrow">→</div>
+        <div class="flow-box result">Bucket <span style="color:var(--accent3)">3</span></div>
+      </div>
+    </div>
+
+    <h3>Step 2: Buckets &amp; Collision Chaining</h3>
+    <div class="diagram">
+      <div class="diagram-title">Dictionary&lt;string, int&gt; Internal Buckets (capacity=7)</div>
+      <div class="hashmap-vis">
+        <div class="bucket-idx">0</div>
+        <div class="bucket-content"><span class="bucket-empty">empty</span></div>
+
+        <div class="bucket-idx">1</div>
+        <div class="bucket-content">
+          <div class="kv-chain">
+            <div class="kv-pair">"Dave" → 42</div>
+          </div>
+        </div>
+
+        <div class="bucket-idx">2</div>
+        <div class="bucket-content"><span class="bucket-empty">empty</span></div>
+
+        <div class="bucket-idx">3</div>
+        <div class="bucket-content">
+          <div class="kv-chain">
+            <div class="kv-pair">"Alice" → 25</div>
+            <span class="chain-arrow">→</span>
+            <div class="kv-pair">"Frank" → 31</div>
+            <span style="font-size:10px; color:var(--accent4); margin-left:4px">← collision! same bucket</span>
+          </div>
+        </div>
+
+        <div class="bucket-idx">4</div>
+        <div class="bucket-content">
+          <div class="kv-pair">"Bob" → 19</div>
+        </div>
+
+        <div class="bucket-idx">5</div>
+        <div class="bucket-content"><span class="bucket-empty">empty</span></div>
+
+        <div class="bucket-idx">6</div>
+        <div class="bucket-content">
+          <div class="kv-pair">"Carol" → 33</div>
+        </div>
+      </div>
+      <div style="margin-top: 14px; font-family: 'JetBrains Mono', monospace; font-size: 11px; color: var(--muted);">
+        Internally: int[] _buckets (head of chain per slot) + Entry[] _entries (flat array of {hash, next, key, value})
+      </div>
+    </div>
+
+    <h3>Step 3: Load Factor &amp; Rehashing</h3>
+    <div class="diagram">
+      <div class="diagram-title">Rehashing — When Count / Capacity &gt; 1.0 (load factor threshold)</div>
+      <div class="rehash-vis">
+        <div class="rehash-table">
+          <h5>Before (capacity=7, count=7)</h5>
+          <div class="r-bucket"><div class="r-idx">0</div><div class="r-item">A</div></div>
+          <div class="r-bucket"><div class="r-idx">1</div><div class="r-item">B</div></div>
+          <div class="r-bucket"><div class="r-idx">2</div><div class="r-item">C</div></div>
+          <div class="r-bucket"><div class="r-idx">3</div><div class="r-item">D→E</div></div>
+          <div class="r-bucket"><div class="r-idx">4</div><div class="r-item">F</div></div>
+          <div class="r-bucket"><div class="r-idx">5</div><div class="r-item">G</div></div>
+          <div class="r-bucket"><div class="r-idx">6</div></div>
+        </div>
+        <div style="font-size:28px; color:var(--accent4); align-self:center;">→</div>
+        <div class="rehash-table">
+          <h5>After Rehash (capacity=17, next prime)</h5>
+          <div class="r-bucket"><div class="r-idx">0</div></div>
+          <div class="r-bucket"><div class="r-idx">1</div><div class="r-item">A</div></div>
+          <div class="r-bucket"><div class="r-idx">2</div></div>
+          <div class="r-bucket"><div class="r-idx">3</div><div class="r-item">D</div></div>
+          <div class="r-bucket"><div class="r-idx">4</div><div class="r-item">B</div></div>
+          <div class="r-bucket"><div class="r-idx">5</div><div class="r-item">E</div></div>
+          <div class="r-bucket"><div class="r-idx">6</div><div class="r-item">F</div></div>
+          <div style="font-size:11px; color:var(--muted); font-family:monospace; margin-top:6px;">...all entries re-bucketed</div>
+        </div>
+      </div>
+      <div style="margin-top:12px; font-family:'JetBrains Mono',monospace; font-size:11px; color:var(--muted);">
+        .NET uses prime bucket counts to minimize clustering. Rehash = allocate new arrays + re-insert all.
+      </div>
+    </div>
+
+    <pre data-lang="C#"><code><span class="kw">var</span> dict = <span class="kw">new</span> <span class="type">Dictionary</span>&lt;<span class="kw">string</span>, <span class="kw">int</span>&gt;();
+<span class="kw">var</span> dict2 = <span class="kw">new</span> <span class="type">Dictionary</span>&lt;<span class="kw">string</span>, <span class="kw">int</span>&gt;(<span class="num">100</span>);  <span class="cm">// pre-size capacity</span>
+
+<span class="cm">// Basic ops — all O(1) average</span>
+dict[<span class="str">"Alice"</span>] = <span class="num">25</span>;         <span class="cm">// Add or update</span>
+dict.<span class="fn">Add</span>(<span class="str">"Bob"</span>, <span class="num">19</span>);        <span class="cm">// Throws if key exists</span>
+<span class="kw">bool</span> has = dict.<span class="fn">ContainsKey</span>(<span class="str">"Alice"</span>);   <span class="cm">// O(1)</span>
+
+<span class="cm">// Safe get — TryGetValue is the preferred pattern</span>
+<span class="kw">if</span> (dict.<span class="fn">TryGetValue</span>(<span class="str">"Alice"</span>, <span class="kw">out int</span> age)) {
+    <span class="type">Console</span>.<span class="fn">WriteLine</span>($<span class="str">"Alice is {age}"</span>);
+}
+
+<span class="cm">// GetOrAdd pattern (no ConcurrentDictionary needed here)</span>
+<span class="kw">ref int</span> val = <span class="kw">ref</span> <span class="type">CollectionsMarshal</span>.<span class="fn">GetValueRefOrAddDefault</span>(dict, <span class="str">"count"</span>, <span class="kw">out</span> _);
+val++;  <span class="cm">// increment in-place — no double lookup</span>
+
+<span class="cm">// Iterate</span>
+<span class="kw">foreach</span> (<span class="kw">var</span> (key, value) <span class="kw">in</span> dict) { }
+<span class="kw">foreach</span> (<span class="type">KeyValuePair</span>&lt;<span class="kw">string</span>,<span class="kw">int</span>&gt; kv <span class="kw">in</span> dict) { }
+
+<span class="cm">// Custom equality comparer (e.g., case-insensitive keys)</span>
+<span class="kw">var</span> ci = <span class="kw">new</span> <span class="type">Dictionary</span>&lt;<span class="kw">string</span>, <span class="kw">int</span>&gt;(<span class="type">StringComparer</span>.OrdinalIgnoreCase);
+
+<span class="cm">// Implementing custom GetHashCode for struct keys:</span>
+<span class="kw">record struct</span> <span class="type">Point</span>(<span class="kw">int</span> X, <span class="kw">int</span> Y);  <span class="cm">// records auto-generate GetHashCode</span></code></pre>
+
+    <div class="info-box danger">
+      <strong>Critical: Custom Types as Keys</strong>
+      If you use a custom class as a Dictionary key, you MUST override both <span class="inline-code">GetHashCode()</span> and <span class="inline-code">Equals()</span>. If two objects are equal, they MUST return the same hash code. Violating this breaks the dictionary entirely.
+    </div>
+
+    <div class="info-box tip">
+      <strong>Pro Tip: CollectionsMarshal</strong>
+      <span class="inline-code">CollectionsMarshal.GetValueRefOrNullRef()</span> (.NET 6+) gives a ref to the value in-place — avoids double-lookup when you need to read-then-update, which is a very common pattern.
+    </div>
+  </div>
+
+  <!-- ═══════════════════ SECTION 6: HashSet ═══════════════════ -->
+  <div class="section" id="hashset">
+    <div class="section-header">
+      <span class="section-num">06</span>
+      <div><h2>HashSet&lt;T&gt;</h2></div>
+    </div>
+
+    <p>Essentially a <strong>Dictionary with no values</strong> — just keys. Uses the same hash table internally. Guarantees unique elements and provides mathematical set operations in O(n).</p>
+
+    <pre data-lang="C#"><code><span class="kw">var</span> set = <span class="kw">new</span> <span class="type">HashSet</span>&lt;<span class="kw">int</span>&gt; { <span class="num">1</span>, <span class="num">2</span>, <span class="num">3</span>, <span class="num">4</span>, <span class="num">5</span> };
+<span class="kw">var</span> other = <span class="kw">new</span> <span class="type">HashSet</span>&lt;<span class="kw">int</span>&gt; { <span class="num">3</span>, <span class="num">4</span>, <span class="num">5</span>, <span class="num">6</span>, <span class="num">7</span> };
+
+set.<span class="fn">Add</span>(<span class="num">6</span>);          <span class="cm">// O(1) — returns false if already present</span>
+set.<span class="fn">Contains</span>(<span class="num">3</span>);    <span class="cm">// O(1) — fastest "contains" available</span>
+set.<span class="fn">Remove</span>(<span class="num">2</span>);      <span class="cm">// O(1)</span>
+
+<span class="cm">// Set operations — all O(n)</span>
+set.<span class="fn">UnionWith</span>(other);            <span class="cm">// {1,2,3,4,5,6,7}</span>
+set.<span class="fn">IntersectWith</span>(other);        <span class="cm">// {3,4,5}</span>
+set.<span class="fn">ExceptWith</span>(other);           <span class="cm">// {1,2}  (set minus other)</span>
+set.<span class="fn">SymmetricExceptWith</span>(other);  <span class="cm">// {1,2,6,7}  (XOR)</span>
+
+<span class="kw">bool</span> sub = set.<span class="fn">IsSubsetOf</span>(other);
+<span class="kw">bool</span> sup = set.<span class="fn">IsSupersetOf</span>(other);
+<span class="kw">bool</span> over = set.<span class="fn">Overlaps</span>(other);     <span class="cm">// any common element?</span>
+
+<span class="cm">// Deduplication — fastest way to unique a collection</span>
+<span class="kw">var</span> dupes = <span class="kw">new</span>[] { <span class="num">1</span>,<span class="num">2</span>,<span class="num">2</span>,<span class="num">3</span>,<span class="num">3</span>,<span class="num">3</span> };
+<span class="kw">var</span> unique = <span class="kw">new</span> <span class="type">HashSet</span>&lt;<span class="kw">int</span>&gt;(dupes);  <span class="cm">// {1,2,3}</span></code></pre>
+
+    <div class="info-box note">
+      <strong>HashSet vs List.Contains</strong>
+      <span class="inline-code">HashSet.Contains()</span> is O(1). <span class="inline-code">List.Contains()</span> is O(n). If you're checking membership frequently, always use a HashSet. For 1M elements: HashSet ≈ 100ns, List ≈ 500ms.
+    </div>
+  </div>
+
+  <!-- ═══════════════════ SECTION 7: Stack ═══════════════════ -->
+  <div class="section" id="stack">
+    <div class="section-header">
+      <span class="section-num">07</span>
+      <div><h2>Stack&lt;T&gt; — LIFO</h2></div>
+    </div>
+
+    <p>Last In, First Out. Internally backed by a <strong>T[] array</strong> with a top index pointer. Push/Pop are O(1) amortized. The "top" grows upward in the array.</p>
+
+    <div class="diagram">
+      <div class="diagram-title">Stack&lt;string&gt; — LIFO Visualization</div>
+      <div style="display: flex; gap: 40px; align-items: flex-start; flex-wrap: wrap;">
+        <div>
+          <div class="stack-vis">
+            <div class="stack-item">Method_A()</div>
+            <div class="stack-item">Method_B()</div>
+            <div class="stack-item">Method_C()</div>
+            <div class="stack-item top">Method_D() &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</div>
+          </div>
+          <div style="text-align:center; font-family:'JetBrains Mono',monospace; font-size:10px; color:var(--muted); margin-top:8px;">Call Stack (example)</div>
+        </div>
+        <div style="font-family:'JetBrains Mono',monospace; font-size:12px; color:var(--muted); align-self:center; line-height:2;">
+          <div><span style="color:var(--accent3)">Push(x)</span>: arr[++top] = x</div>
+          <div><span style="color:var(--accent5)">Pop()</span> &nbsp;: return arr[top--]</div>
+          <div><span style="color:var(--accent)">Peek()</span> : return arr[top]</div>
+          <div style="margin-top:8px; color:var(--muted)">Internal array doubles when full</div>
+        </div>
+      </div>
+    </div>
+
+    <pre data-lang="C#"><code><span class="kw">var</span> stack = <span class="kw">new</span> <span class="type">Stack</span>&lt;<span class="kw">string</span>&gt;();
+
+stack.<span class="fn">Push</span>(<span class="str">"first"</span>);   <span class="cm">// O(1)</span>
+stack.<span class="fn">Push</span>(<span class="str">"second"</span>);
+stack.<span class="fn">Push</span>(<span class="str">"third"</span>);
+
+<span class="kw">string</span> top = stack.<span class="fn">Peek</span>();       <span class="cm">// "third" — peek without remove, O(1)</span>
+<span class="kw">string</span> popped = stack.<span class="fn">Pop</span>();     <span class="cm">// "third" — O(1)</span>
+<span class="kw">bool</span> found = stack.<span class="fn">TryPop</span>(<span class="kw">out string</span> val);  <span class="cm">// safe pop</span>
+
+<span class="cm">// Real use: bracket matching, undo/redo, expression evaluation</span>
+<span class="kw">static bool</span> <span class="fn">IsBalanced</span>(<span class="kw">string</span> s) {
+    <span class="kw">var</span> stk = <span class="kw">new</span> <span class="type">Stack</span>&lt;<span class="kw">char</span>&gt;();
+    <span class="kw">foreach</span> (<span class="kw">char</span> c <span class="kw">in</span> s) {
+        <span class="kw">if</span> (c == <span class="str">'('</span>) stk.<span class="fn">Push</span>(c);
+        <span class="kw">else if</span> (c == <span class="str">')'</span>) {
+            <span class="kw">if</span> (stk.Count == <span class="num">0</span>) <span class="kw">return false</span>;
+            stk.<span class="fn">Pop</span>();
+        }
+    }
+    <span class="kw">return</span> stk.Count == <span class="num">0</span>;
+}</code></pre>
+  </div>
+
+  <!-- ═══════════════════ SECTION 8: Queue ═══════════════════ -->
+  <div class="section" id="queue">
+    <div class="section-header">
+      <span class="section-num">08</span>
+      <div><h2>Queue&lt;T&gt; — FIFO</h2></div>
+    </div>
+
+    <p>First In, First Out. Backed by a <strong>circular ring buffer</strong> (T[] array with head/tail indices that wrap around). This avoids the O(n) shifting problem of a naïve array queue.</p>
+
+    <div class="diagram">
+      <div class="diagram-title">Queue&lt;int&gt; — Circular Ring Buffer Internals</div>
+      <div class="queue-vis" style="margin-bottom: 16px;">
+        <div class="q-wrapper front">
+          <div class="queue-item">10</div>
+          <div class="queue-front-label">HEAD (Dequeue)</div>
+        </div>
+        <div class="q-wrapper">
+          <div class="queue-item">20</div>
+          <div class="queue-front-label">&nbsp;</div>
+        </div>
+        <div class="q-wrapper">
+          <div class="queue-item">30</div>
+          <div class="queue-front-label">&nbsp;</div>
+        </div>
+        <div class="q-wrapper">
+          <div class="queue-item">40</div>
+          <div class="queue-front-label">&nbsp;</div>
+        </div>
+        <div class="q-wrapper rear">
+          <div class="queue-item">50</div>
+          <div class="queue-front-label">TAIL (Enqueue)</div>
+        </div>
+      </div>
+      <div style="font-family:'JetBrains Mono',monospace; font-size:11px; color:var(--muted); line-height:1.8;">
+        _head and _tail are indices into the internal array<br>
+        Enqueue: arr[_tail] = item; _tail = (_tail+1) % capacity  → O(1)<br>
+        Dequeue: item = arr[_head]; _head = (_head+1) % capacity  → O(1)<br>
+        When full: allocate new array (2× size), copy from _head around
+      </div>
+    </div>
+
+    <pre data-lang="C#"><code><span class="kw">var</span> queue = <span class="kw">new</span> <span class="type">Queue</span>&lt;<span class="kw">int</span>&gt;();
+
+queue.<span class="fn">Enqueue</span>(<span class="num">10</span>);   <span class="cm">// Add to tail — O(1)</span>
+queue.<span class="fn">Enqueue</span>(<span class="num">20</span>);
+queue.<span class="fn">Enqueue</span>(<span class="num">30</span>);
+
+<span class="kw">int</span> front = queue.<span class="fn">Peek</span>();         <span class="cm">// 10 — peek without remove</span>
+<span class="kw">int</span> removed = queue.<span class="fn">Dequeue</span>();   <span class="cm">// 10 — remove from front O(1)</span>
+<span class="kw">bool</span> ok = queue.<span class="fn">TryDequeue</span>(<span class="kw">out int</span> val);  <span class="cm">// safe dequeue</span>
+
+<span class="cm">// Real use: BFS graph traversal</span>
+<span class="kw">void</span> <span class="fn">BFS</span>(<span class="type">Graph</span> g, <span class="kw">int</span> start) {
+    <span class="kw">var</span> visited = <span class="kw">new</span> <span class="type">HashSet</span>&lt;<span class="kw">int</span>&gt;();
+    <span class="kw">var</span> q = <span class="kw">new</span> <span class="type">Queue</span>&lt;<span class="kw">int</span>&gt;();
+    q.<span class="fn">Enqueue</span>(start);
+    <span class="kw">while</span> (q.Count > <span class="num">0</span>) {
+        <span class="kw">int</span> node = q.<span class="fn">Dequeue</span>();
+        <span class="kw">if</span> (!visited.<span class="fn">Add</span>(node)) <span class="kw">continue</span>;
+        <span class="kw">foreach</span> (<span class="kw">int</span> neighbor <span class="kw">in</span> g.<span class="fn">Neighbors</span>(node))
+            q.<span class="fn">Enqueue</span>(neighbor);
+    }
+}</code></pre>
+  </div>
+
+  <!-- ═══════════════════ SECTION 9: SortedSet / SortedDictionary ═══════════════════ -->
+  <div class="section" id="sortedset">
+    <div class="section-header">
+      <span class="section-num">09</span>
+      <div><h2>SortedSet&lt;T&gt; &amp; SortedDictionary</h2></div>
+    </div>
+
+    <p>Both are backed by a <strong>Red-Black Tree</strong> — a self-balancing binary search tree. O(log n) for all operations, but always sorted. No hash function needed.</p>
+
+    <h3>Red-Black Tree Structure</h3>
+    <div class="diagram">
+      <div class="diagram-title">SortedSet&lt;int&gt; { 1,2,3,4,5,6,7 } → Red-Black Tree</div>
+      <div class="rbt-container">
+        <div class="rbt-row">
+          <div class="rbt-node black">4</div>
+        </div>
+        <div style="font-size:18px; color:var(--muted); display:flex; width:180px; justify-content:space-between;">
+          <span>↙</span><span>↘</span>
+        </div>
+        <div class="rbt-row">
+          <div class="rbt-node red">2</div>
+          <div style="width:60px"></div>
+          <div class="rbt-node red">6</div>
+        </div>
+        <div style="font-size:16px; color:var(--muted); display:flex; width:260px; justify-content:space-around;">
+          <span>↙↘</span><span></span><span>↙↘</span>
+        </div>
+        <div class="rbt-row">
+          <div class="rbt-node black">1</div>
+          <div class="rbt-node black">3</div>
+          <div style="width:20px"></div>
+          <div class="rbt-node black">5</div>
+          <div class="rbt-node black">7</div>
+        </div>
+      </div>
+      <div style="margin-top:16px; font-family:'JetBrains Mono',monospace; font-size:11px; color:var(--muted); line-height:2;">
+        Rules: (1) Every node is red or black &nbsp;(2) Root is always black<br>
+        (3) No two adjacent red nodes &nbsp;(4) All paths to leaves have same black-depth<br>
+        → Tree height ≤ 2·log₂(n+1) → guaranteed O(log n)
+      </div>
+    </div>
+
+    <pre data-lang="C#"><code><span class="kw">var</span> ss = <span class="kw">new</span> <span class="type">SortedSet</span>&lt;<span class="kw">int</span>&gt; { <span class="num">5</span>, <span class="num">2</span>, <span class="num">8</span>, <span class="num">1</span>, <span class="num">9</span> };
+
+<span class="cm">// Always sorted: {1, 2, 5, 8, 9}</span>
+ss.<span class="fn">Add</span>(<span class="num">3</span>);     <span class="cm">// O(log n)</span>
+ss.<span class="fn">Remove</span>(<span class="num">5</span>);  <span class="cm">// O(log n)</span>
+ss.<span class="fn">Contains</span>(<span class="num">8</span>); <span class="cm">// O(log n) ← slower than HashSet O(1)!</span>
+
+<span class="cm">// Unique power: range queries — impossible with HashSet</span>
+<span class="type">SortedSet</span>&lt;<span class="kw">int</span>&gt; range = ss.<span class="fn">GetViewBetween</span>(<span class="num">2</span>, <span class="num">8</span>); <span class="cm">// O(log n)</span>
+<span class="kw">int</span> min = ss.Min;   <span class="cm">// O(1) cached</span>
+<span class="kw">int</span> max = ss.Max;   <span class="cm">// O(1) cached</span>
+
+<span class="cm">// SortedDictionary — same tree, just stores K/V pairs</span>
+<span class="kw">var</span> sd = <span class="kw">new</span> <span class="type">SortedDictionary</span>&lt;<span class="kw">string</span>, <span class="kw">int</span>&gt;();
+sd[<span class="str">"Charlie"</span>] = <span class="num">1</span>;
+sd[<span class="str">"Alice"</span>] = <span class="num">2</span>;
+sd[<span class="str">"Bob"</span>] = <span class="num">3</span>;
+<span class="cm">// Iteration yields: Alice, Bob, Charlie (alphabetical)</span>
+
+<span class="cm">// SortedList — like SortedDictionary but array-backed (less memory,</span>
+<span class="cm">//              faster iteration, O(n) insert/remove)</span>
+<span class="kw">var</span> sl = <span class="kw">new</span> <span class="type">SortedList</span>&lt;<span class="kw">string</span>, <span class="kw">int</span>&gt;();</code></pre>
+
+    <div class="cmp-grid" style="margin-top:16px;">
+      <div class="cmp-card">
+        <h4>HashSet / Dictionary</h4>
+        <ul>
+          <li>O(1) average lookup</li>
+          <li>No ordering guarantee</li>
+          <li>More memory (hash table)</li>
+          <li>Best for: frequency, membership</li>
+        </ul>
+      </div>
+      <div class="cmp-card">
+        <h4>SortedSet / SortedDictionary</h4>
+        <ul>
+          <li>O(log n) all ops</li>
+          <li>Always sorted</li>
+          <li>Range queries supported</li>
+          <li>Best for: leaderboards, sliding window</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════ SECTION 10: PriorityQueue ═══════════════════ -->
+  <div class="section" id="priority">
+    <div class="section-header">
+      <span class="section-num">10</span>
+      <div><h2>PriorityQueue&lt;TElement, TPriority&gt;</h2></div>
+    </div>
+
+    <p>Added in <span class="badge badge-green">.NET 6</span>. Backed by a <strong>4-ary min-heap</strong> (quaternary heap, not binary). Always Dequeues the element with the <em>lowest</em> priority value. O(log n) enqueue/dequeue.</p>
+
+    <div class="diagram">
+      <div class="diagram-title">Binary Min-Heap (simplified view) — smallest always at root</div>
+      <div class="heap-vis">
+        <div class="heap-row"><div class="heap-node root">1</div></div>
+        <div style="font-size:16px; color:var(--muted); display:flex; width:120px; justify-content:space-around;"><span>↙</span><span>↘</span></div>
+        <div class="heap-row">
+          <div class="heap-node">3</div>
+          <div style="width:30px"></div>
+          <div class="heap-node">4</div>
+        </div>
+        <div style="font-size:14px; color:var(--muted); display:flex; width:200px; justify-content:space-around;"><span>↙↘</span><span>↙↘</span></div>
+        <div class="heap-row">
+          <div class="heap-node">5</div>
+          <div class="heap-node">8</div>
+          <div class="heap-node">6</div>
+          <div class="heap-node">9</div>
+        </div>
+      </div>
+      <div style="margin-top:12px; font-family:'JetBrains Mono',monospace; font-size:11px; color:var(--muted); line-height:1.8;">
+        Stored in array: [1, 3, 4, 5, 8, 6, 9]  (BFS order)<br>
+        Parent of i = (i-1)/2 &nbsp;&nbsp; Children of i = 2i+1, 2i+2<br>
+        Enqueue: add to end, bubble UP  → O(log n)<br>
+        Dequeue: remove root, move last to root, sift DOWN → O(log n)
+      </div>
+    </div>
+
+    <pre data-lang="C#"><code><span class="kw">var</span> pq = <span class="kw">new</span> <span class="type">PriorityQueue</span>&lt;<span class="kw">string</span>, <span class="kw">int</span>&gt;(); <span class="cm">// (element, priority)</span>
+
+pq.<span class="fn">Enqueue</span>(<span class="str">"Task C"</span>, <span class="num">3</span>);  <span class="cm">// priority 3</span>
+pq.<span class="fn">Enqueue</span>(<span class="str">"Task A"</span>, <span class="num">1</span>);  <span class="cm">// priority 1 — lowest = highest urgency</span>
+pq.<span class="fn">Enqueue</span>(<span class="str">"Task B"</span>, <span class="num">2</span>);  <span class="cm">// priority 2</span>
+
+<span class="kw">string</span> next = pq.<span class="fn">Dequeue</span>();  <span class="cm">// "Task A" (priority 1)</span>
+next = pq.<span class="fn">Dequeue</span>();         <span class="cm">// "Task B" (priority 2)</span>
+
+pq.<span class="fn">TryPeek</span>(<span class="kw">out string</span> el, <span class="kw">out int</span> pri); <span class="cm">// peek without remove</span>
+
+<span class="cm">// Dijkstra's shortest path — classic PQ use case</span>
+<span class="kw">var</span> dist = <span class="kw">new</span> <span class="type">Dictionary</span>&lt;<span class="kw">int</span>, <span class="kw">int</span>&gt;();
+<span class="kw">var</span> pqDijk = <span class="kw">new</span> <span class="type">PriorityQueue</span>&lt;<span class="kw">int</span>, <span class="kw">int</span>&gt;();  <span class="cm">// (node, distance)</span>
+pqDijk.<span class="fn">Enqueue</span>(<span class="num">0</span>, <span class="num">0</span>); <span class="cm">// start node, distance 0</span></code></pre>
+  </div>
+
+  <!-- ═══════════════════ SECTION 11: Concurrent Collections ═══════════════════ -->
+  <div class="section" id="concurrent">
+    <div class="section-header">
+      <span class="section-num">11</span>
+      <div><h2>Concurrent Collections</h2></div>
+    </div>
+
+    <p>In <span class="inline-code">System.Collections.Concurrent</span>. Thread-safe without external locking. Use in multi-threaded scenarios like producer-consumer patterns, parallel workloads, etc.</p>
+
+    <div class="cmp-grid">
+      <div class="cmp-card">
+        <h4>ConcurrentDictionary&lt;K,V&gt;</h4>
+        <ul>
+          <li>Fine-grained locking (stripe locks)</li>
+          <li>GetOrAdd, AddOrUpdate atomic</li>
+          <li>Better than lock+Dictionary</li>
+        </ul>
+      </div>
+      <div class="cmp-card">
+        <h4>ConcurrentQueue&lt;T&gt;</h4>
+        <ul>
+          <li>Lock-free segments algorithm</li>
+          <li>TryDequeue instead of Dequeue</li>
+          <li>Perfect for work queues</li>
+        </ul>
+      </div>
+      <div class="cmp-card">
+        <h4>ConcurrentBag&lt;T&gt;</h4>
+        <ul>
+          <li>Unordered, per-thread local lists</li>
+          <li>Fast when same thread add+remove</li>
+          <li>Thread-local storage trick</li>
+        </ul>
+      </div>
+      <div class="cmp-card">
+        <h4>BlockingCollection&lt;T&gt;</h4>
+        <ul>
+          <li>Wraps any IProducerConsumerCollection</li>
+          <li>Blocks Add when full, Take when empty</li>
+          <li>BoundedCapacity throttling</li>
+        </ul>
+      </div>
+    </div>
+
+    <pre data-lang="C#"><code><span class="cm">// ConcurrentDictionary — atomic patterns</span>
+<span class="kw">var</span> cd = <span class="kw">new</span> <span class="type">ConcurrentDictionary</span>&lt;<span class="kw">string</span>, <span class="kw">int</span>&gt;();
+
+<span class="cm">// Atomic increment — no race condition</span>
+cd.<span class="fn">AddOrUpdate</span>(<span class="str">"visits"</span>, <span class="num">1</span>, (key, old) => old + <span class="num">1</span>);
+
+<span class="cm">// Lazy init — only computes if key missing</span>
+<span class="kw">var</span> val = cd.<span class="fn">GetOrAdd</span>(<span class="str">"cache_key"</span>, k => <span class="fn">ExpensiveCompute</span>(k));
+
+<span class="cm">// ConcurrentQueue — producer/consumer</span>
+<span class="kw">var</span> q = <span class="kw">new</span> <span class="type">ConcurrentQueue</span>&lt;<span class="kw">string</span>&gt;();
+<span class="type">Task</span>.<span class="fn">Run</span>(() => q.<span class="fn">Enqueue</span>(<span class="str">"work item"</span>));  <span class="cm">// producer</span>
+<span class="type">Task</span>.<span class="fn">Run</span>(() => {                              <span class="cm">// consumer</span>
+    <span class="kw">if</span> (q.<span class="fn">TryDequeue</span>(<span class="kw">out string</span> item))
+        <span class="fn">Process</span>(item);
+});
+
+<span class="cm">// BlockingCollection — bounded producer/consumer pipeline</span>
+<span class="kw">using var</span> bc = <span class="kw">new</span> <span class="type">BlockingCollection</span>&lt;<span class="kw">int</span>&gt;(boundedCapacity: <span class="num">100</span>);
+<span class="type">Task</span>.<span class="fn">Run</span>(() => {
+    <span class="kw">for</span> (<span class="kw">int</span> i = <span class="num">0</span>; i < <span class="num">1000</span>; i++) bc.<span class="fn">Add</span>(i);  <span class="cm">// blocks if full</span>
+    bc.<span class="fn">CompleteAdding</span>();
+});
+<span class="kw">foreach</span> (<span class="kw">int</span> item <span class="kw">in</span> bc.<span class="fn">GetConsumingEnumerable</span>())
+    <span class="fn">Process</span>(item);  <span class="cm">// blocks until item available</span></code></pre>
+
+    <div class="info-box warn">
+      <strong>Watch Out: GetOrAdd Race</strong>
+      <span class="inline-code">GetOrAdd</span> on ConcurrentDictionary is NOT atomic — the factory may be called multiple times. For truly atomic lazy init, use <span class="inline-code">Lazy&lt;T&gt;</span> as the value type.
+    </div>
+  </div>
+
+  <!-- ═══════════════════ SECTION 12: Immutable Collections ═══════════════════ -->
+  <div class="section" id="immutable">
+    <div class="section-header">
+      <span class="section-num">12</span>
+      <div><h2>Immutable Collections</h2></div>
+    </div>
+
+    <p>In <span class="inline-code">System.Collections.Immutable</span> <span class="badge badge-yellow">NuGet</span>. Every "mutation" creates a <strong>new version</strong> sharing structure with the old one via <em>persistent data structures</em> (structural sharing). Safe for functional patterns and multi-threading without locks.</p>
+
+    <div class="diagram">
+      <div class="diagram-title">ImmutableList — Structural Sharing (AVL tree internally)</div>
+      <div class="immut-vis">
+        <div class="immut-ver">
+          <h5>v1 = [1, 2, 3]</h5>
+          <div class="immut-arr">
+            <div class="immut-cell">1</div>
+            <div class="immut-cell">2</div>
+            <div class="immut-cell">3</div>
+          </div>
+        </div>
+        <div style="font-size:24px; color:var(--accent4); align-self:center;">=&gt;</div>
+        <div class="immut-ver">
+          <h5>v2 = v1.Add(4) → [1, 2, 3, 4]</h5>
+          <div class="immut-arr">
+            <div class="immut-cell shared">1</div>
+            <div class="immut-cell shared">2</div>
+            <div class="immut-cell shared">3</div>
+            <div class="immut-cell new">4</div>
+          </div>
+        </div>
+      </div>
+      <div style="font-family:'JetBrains Mono',monospace; font-size:11px; color:var(--muted); margin-top:12px;">
+        Shared nodes (dimmed) are reused — only new path is allocated<br>
+        ImmutableList internally uses a balanced binary tree, not an array → O(log n) ops
+      </div>
+    </div>
+
+    <pre data-lang="C#"><code><span class="kw">using</span> <span class="type">System.Collections.Immutable</span>;
+
+<span class="type">ImmutableList</span>&lt;<span class="kw">int</span>&gt; v1 = <span class="type">ImmutableList</span>&lt;<span class="kw">int</span>&gt;.<span class="fn">Empty</span>;
+<span class="type">ImmutableList</span>&lt;<span class="kw">int</span>&gt; v2 = v1.<span class="fn">Add</span>(<span class="num">1</span>).<span class="fn">Add</span>(<span class="num">2</span>).<span class="fn">Add</span>(<span class="num">3</span>);  <span class="cm">// v1 unchanged!</span>
+<span class="type">ImmutableList</span>&lt;<span class="kw">int</span>&gt; v3 = v2.<span class="fn">Remove</span>(<span class="num">2</span>);  <span class="cm">// v2 still {1,2,3}</span>
+
+<span class="cm">// Bulk build with Builder — avoids O(n log n) individual adds</span>
+<span class="kw">var</span> builder = <span class="type">ImmutableList</span>&lt;<span class="kw">int</span>&gt;.<span class="fn">CreateBuilder</span>();
+builder.<span class="fn">Add</span>(<span class="num">1</span>); builder.<span class="fn">Add</span>(<span class="num">2</span>); builder.<span class="fn">Add</span>(<span class="num">3</span>);
+<span class="type">ImmutableList</span>&lt;<span class="kw">int</span>&gt; final = builder.<span class="fn">ToImmutable</span>(); <span class="cm">// O(n) build</span>
+
+<span class="cm">// ImmutableDictionary — perfect for config / state snapshots</span>
+<span class="kw">var</span> config = <span class="type">ImmutableDictionary</span>&lt;<span class="kw">string</span>,<span class="kw">string</span>&gt;.<span class="fn">Empty</span>
+    .<span class="fn">Add</span>(<span class="str">"env"</span>, <span class="str">"prod"</span>)
+    .<span class="fn">Add</span>(<span class="str">"version"</span>, <span class="str">"2.1"</span>);
+
+<span class="cm">// ImmutableArray — struct wrapping T[], zero overhead vs array</span>
+<span class="type">ImmutableArray</span>&lt;<span class="kw">int</span>&gt; ia = <span class="type">ImmutableArray</span>.<span class="fn">Create</span>(<span class="num">1</span>,<span class="num">2</span>,<span class="num">3</span>);</code></pre>
+  </div>
+
+  <!-- ═══════════════════ SECTION 13: Span<T> ═══════════════════ -->
+  <div class="section" id="span">
+    <div class="section-header">
+      <span class="section-num">13</span>
+      <div><h2>Span&lt;T&gt; &amp; Memory&lt;T&gt;</h2></div>
+    </div>
+
+    <p><span class="badge badge-green">.NET Core 2.1+</span> Not a collection per se, but the most important performance tool when working with them. A <strong>ref struct</strong> that represents a contiguous region of memory — over arrays, stack, or unmanaged memory — with zero copying.</p>
+
+    <pre data-lang="C#"><code><span class="cm">// Span over array — no allocation, just a pointer+length view</span>
+<span class="kw">int</span>[] arr = { <span class="num">1</span>, <span class="num">2</span>, <span class="num">3</span>, <span class="num">4</span>, <span class="num">5</span> };
+<span class="type">Span</span>&lt;<span class="kw">int</span>&gt; span = arr.<span class="fn">AsSpan</span>();
+<span class="type">Span</span>&lt;<span class="kw">int</span>&gt; slice = span[<span class="num">1</span>..<span class="num">4</span>];  <span class="cm">// {2,3,4} — no allocation!</span>
+slice[<span class="num">0</span>] = <span class="num">99</span>;               <span class="cm">// modifies original array!</span>
+
+<span class="cm">// Stackalloc — allocate on stack (zero GC pressure)</span>
+<span class="type">Span</span>&lt;<span class="kw">int</span>&gt; stackSpan = <span class="kw">stackalloc int</span>[<span class="num">128</span>];  <span class="cm">// fast! no heap alloc</span>
+
+<span class="cm">// String parsing WITHOUT allocation (huge win for parsers)</span>
+<span class="kw">string</span> date = <span class="str">"2024-01-15"</span>;
+<span class="type">ReadOnlySpan</span>&lt;<span class="kw">char</span>&gt; dateSpan = date.<span class="fn">AsSpan</span>();
+<span class="type">ReadOnlySpan</span>&lt;<span class="kw">char</span>&gt; year = dateSpan[..<span class="num">4</span>];   <span class="cm">// "2024" — no string alloc</span>
+<span class="kw">int</span> y = <span class="kw">int</span>.<span class="fn">Parse</span>(year);
+
+<span class="cm">// Memory&lt;T&gt; — heap-based, can be stored in fields (unlike Span)</span>
+<span class="type">Memory</span>&lt;<span class="kw">byte</span>&gt; mem = <span class="kw">new</span> <span class="kw">byte</span>[<span class="num">1024</span>];
+<span class="kw">await</span> stream.<span class="fn">ReadAsync</span>(mem);  <span class="cm">// async-compatible</span>
+<span class="type">Span</span>&lt;<span class="kw">byte</span>&gt; s = mem.<span class="fn">Span</span>;       <span class="cm">// get Span when sync needed</span></code></pre>
+
+    <div class="info-box tip">
+      <strong>Zero-Alloc Parsing Pattern</strong>
+      Using <span class="inline-code">ReadOnlySpan&lt;char&gt;</span> for string splitting avoids allocating substring objects. For hot paths processing millions of strings, this can reduce GC pauses by 80%+.
+    </div>
+  </div>
+
+  <!-- ═══════════════════ SECTION 14: Big-O Cheat Sheet ═══════════════════ -->
+  <div class="section" id="complexity">
+    <div class="section-header">
+      <span class="section-num">14</span>
+      <div><h2>Big-O Complexity Cheat Sheet</h2></div>
+    </div>
+
+    <table>
+      <tr>
+        <th>Collection</th>
+        <th>Access</th>
+        <th>Search</th>
+        <th>Insert (end)</th>
+        <th>Insert (mid)</th>
+        <th>Delete</th>
+        <th>Memory</th>
+      </tr>
+      <tr>
+        <td><span class="badge badge-blue">T[]</span> Array</td>
+        <td class="o-1">O(1)</td>
+        <td class="o-n">O(n)</td>
+        <td class="o-bad">O(n) *fixed</td>
+        <td class="o-bad">O(n)</td>
+        <td class="o-bad">O(n)</td>
+        <td>Contiguous, best</td>
+      </tr>
+      <tr>
+        <td><span class="badge badge-blue">List&lt;T&gt;</span></td>
+        <td class="o-1">O(1)</td>
+        <td class="o-n">O(n)</td>
+        <td class="o-1">O(1)†</td>
+        <td class="o-bad">O(n)</td>
+        <td class="o-bad">O(n)</td>
+        <td>Contiguous, good</td>
+      </tr>
+      <tr>
+        <td><span class="badge badge-blue">LinkedList&lt;T&gt;</span></td>
+        <td class="o-n">O(n)</td>
+        <td class="o-n">O(n)</td>
+        <td class="o-1">O(1)</td>
+        <td class="o-1">O(1) ‡</td>
+        <td class="o-1">O(1) ‡</td>
+        <td>Per-node heap, worst</td>
+      </tr>
+      <tr>
+        <td><span class="badge badge-blue">Dictionary&lt;K,V&gt;</span></td>
+        <td class="o-1">O(1)*</td>
+        <td class="o-1">O(1)*</td>
+        <td class="o-1">O(1)*</td>
+        <td>N/A</td>
+        <td class="o-1">O(1)*</td>
+        <td>Hash table overhead</td>
+      </tr>
+      <tr>
+        <td><span class="badge badge-blue">HashSet&lt;T&gt;</span></td>
+        <td>N/A</td>
+        <td class="o-1">O(1)*</td>
+        <td class="o-1">O(1)*</td>
+        <td>N/A</td>
+        <td class="o-1">O(1)*</td>
+        <td>Hash table overhead</td>
+      </tr>
+      <tr>
+        <td><span class="badge badge-blue">Stack&lt;T&gt;</span></td>
+        <td>Top only</td>
+        <td class="o-n">O(n)</td>
+        <td class="o-1">O(1)†</td>
+        <td>N/A</td>
+        <td class="o-1">O(1) top</td>
+        <td>Contiguous, good</td>
+      </tr>
+      <tr>
+        <td><span class="badge badge-blue">Queue&lt;T&gt;</span></td>
+        <td>Front only</td>
+        <td class="o-n">O(n)</td>
+        <td class="o-1">O(1)†</td>
+        <td>N/A</td>
+        <td class="o-1">O(1) front</td>
+        <td>Ring buffer, good</td>
+      </tr>
+      <tr>
+        <td><span class="badge badge-blue">SortedSet&lt;T&gt;</span></td>
+        <td>Min/Max O(1)</td>
+        <td class="o-logn">O(log n)</td>
+        <td class="o-logn">O(log n)</td>
+        <td class="o-logn">O(log n)</td>
+        <td class="o-logn">O(log n)</td>
+        <td>Tree nodes, moderate</td>
+      </tr>
+      <tr>
+        <td><span class="badge badge-blue">SortedDictionary</span></td>
+        <td class="o-logn">O(log n)</td>
+        <td class="o-logn">O(log n)</td>
+        <td class="o-logn">O(log n)</td>
+        <td class="o-logn">O(log n)</td>
+        <td class="o-logn">O(log n)</td>
+        <td>Tree nodes, moderate</td>
+      </tr>
+      <tr>
+        <td><span class="badge badge-blue">PriorityQueue</span></td>
+        <td>Min O(1)</td>
+        <td class="o-n">O(n)</td>
+        <td class="o-logn">O(log n)</td>
+        <td>N/A</td>
+        <td class="o-logn">O(log n)</td>
+        <td>Contiguous, good</td>
+      </tr>
+    </table>
+
+    <div style="font-family:'JetBrains Mono',monospace; font-size:11px; color:var(--muted); margin-top:8px; line-height:2;">
+      * = average case (amortized) &nbsp;&nbsp; † = amortized (occasional resize) &nbsp;&nbsp; ‡ = given node reference
+    </div>
+
+    <h3 style="margin-top: 28px;">Quick Decision Guide</h3>
+    <div class="cmp-grid">
+      <div class="cmp-card">
+        <h4>Need fast lookup by key?</h4>
+        <ul><li>→ Dictionary&lt;K,V&gt;</li><li>→ HashSet if just membership</li></ul>
+      </div>
+      <div class="cmp-card">
+        <h4>Need sorted data + ranges?</h4>
+        <ul><li>→ SortedSet / SortedDictionary</li><li>→ SortedList if read-heavy</li></ul>
+      </div>
+      <div class="cmp-card">
+        <h4>LIFO? (undo, call stack)</h4>
+        <ul><li>→ Stack&lt;T&gt;</li></ul>
+      </div>
+      <div class="cmp-card">
+        <h4>FIFO? (BFS, task queue)</h4>
+        <ul><li>→ Queue&lt;T&gt;</li></ul>
+      </div>
+      <div class="cmp-card">
+        <h4>Priority scheduling?</h4>
+        <ul><li>→ PriorityQueue&lt;T,P&gt;</li></ul>
+      </div>
+      <div class="cmp-card">
+        <h4>Multi-threaded access?</h4>
+        <ul><li>→ ConcurrentDictionary</li><li>→ ConcurrentQueue / Bag</li><li>→ BlockingCollection</li></ul>
+      </div>
+      <div class="cmp-card">
+        <h4>Immutable / functional style?</h4>
+        <ul><li>→ ImmutableList / Dictionary</li><li>→ ImmutableArray (perf)</li></ul>
+      </div>
+      <div class="cmp-card">
+        <h4>Hot path, zero alloc?</h4>
+        <ul><li>→ Span&lt;T&gt; / stackalloc</li><li>→ ArrayPool&lt;T&gt;.Shared</li></ul>
+      </div>
+    </div>
+  </div>
+
+  <footer>
+    C# Collections — Complete Deep Reference &nbsp;·&nbsp; System.Collections.Generic &nbsp;·&nbsp; .NET
+  </footer>
+</div>
+
+</body>
+</html>
