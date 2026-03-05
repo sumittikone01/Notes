@@ -228,7 +228,7 @@ hr { border:none; border-top:1px solid var(--border); margin:44px 0; }
       <a class="sidebar-link" href="#services"><span class="dot"></span>Service Lifetimes</a>
 
       <div class="sidebar-group-label">// Advanced</div>
-      <a class="sidebar-link" href="#efcore"><span class="dot"></span>Entity Framework Core</a>
+      <a class="sidebar-link" href="#adonet"><span class="dot"></span>ADO.NET Database Access</a>
       <a class="sidebar-link" href="#swagger"><span class="dot"></span>Swagger / OpenAPI</a>
       <a class="sidebar-link" href="#cors"><span class="dot"></span>CORS</a>
       <a class="sidebar-link" href="#filters"><span class="dot"></span>Action Filters</a>
@@ -246,7 +246,7 @@ hr { border:none; border-top:1px solid var(--border); margin:44px 0; }
         <span class="hi">ASP.NET Core</span>
         <span class="lo">Web API</span>
       </h1>
-      <p class="page-desc">A complete reference for building Web APIs with ASP.NET Core — from HTTP basics and controllers to middleware, dependency injection, EF Core, and authentication.</p>
+      <p class="page-desc">A complete reference for building Web APIs with ASP.NET Core — from HTTP basics and controllers to middleware, dependency injection, ADO.NET database access, and authentication.</p>
     </div>
 
     <!-- ── 1. What is Web API ── -->
@@ -354,8 +354,8 @@ hr { border:none; border-top:1px solid var(--border); margin:44px 0; }
 │   ├── IProductService.cs
 │   └── ProductService.cs
 │
-├── <span class="at">Data/</span>                 <span class="cm">← Database context (EF Core)</span>
-│   └── AppDbContext.cs
+├── <span class="at">Data/</span>                 <span class="cm">← ADO.NET database helpers</span>
+│   └── DbHelper.cs
 │
 ├── <span class="at">Program.cs</span>            <span class="cm">← App entry point + service registration</span>
 ├── <span class="at">appsettings.json</span>      <span class="cm">← Configuration (DB strings, settings)</span>
@@ -376,8 +376,8 @@ hr { border:none; border-top:1px solid var(--border); margin:44px 0; }
 builder.Services.<span class="fn">AddControllers</span>();                <span class="cm">// adds MVC controllers</span>
 builder.Services.<span class="fn">AddEndpointsApiExplorer</span>();        <span class="cm">// for Swagger</span>
 builder.Services.<span class="fn">AddSwaggerGen</span>();                  <span class="cm">// Swagger docs</span>
-builder.Services.<span class="fn">AddDbContext</span>&lt;<span class="cl">AppDbContext</span>&gt;(opts =>
-    opts.<span class="fn">UseSqlServer</span>(builder.Configuration.<span class="fn">GetConnectionString</span>(<span class="st">"Default"</span>)));
+
+<span class="cm">// Register connection string as a singleton helper (ADO.NET)</span>
 builder.Services.<span class="fn">AddScoped</span>&lt;<span class="cl">IProductService</span>, <span class="cl">ProductService</span>&gt;();
 
 <span class="kw">var</span> app = builder.<span class="fn">Build</span>();
@@ -649,7 +649,7 @@ app.<span class="fn">Run</span>();</pre>
       <h2 class="sec-title" id="models">Models &amp; DTOs</h2>
 
       <h3 class="sub-title">Model (Entity)</h3>
-      <p>A <strong>Model</strong> represents your database entity — it maps directly to a database table (when using EF Core).</p>
+      <p>A <strong>Model</strong> represents your database entity — it mirrors the columns of a database table.</p>
 
       <div class="code-block">
         <div class="code-header"><div class="code-dots"><div class="code-dot r"></div><div class="code-dot y"></div><div class="code-dot g"></div></div><span class="code-lang">Models/Product.cs</span></div>
@@ -875,94 +875,221 @@ builder.Services.<span class="fn">AddScoped</span>&lt;<span class="cl">IEmailSer
       </div>
 
       <div class="callout callout-warn">
-        <p><strong>⚠ Captive dependency:</strong> Never inject a Scoped or Transient service into a Singleton — the short-lived service becomes "captured" and lives as long as the Singleton, which causes bugs. EF Core's <code>DbContext</code> is Scoped — never inject it into a Singleton.</p>
+        <p><strong>⚠ Captive dependency:</strong> Never inject a Scoped or Transient service into a Singleton — the short-lived service becomes "captured" and lives as long as the Singleton, which causes bugs. A database connection/service should be Scoped — never inject it into a Singleton.</p>
       </div>
     </section>
 
-    <!-- ── 17. EF Core ── -->
+    <!-- ── 17. ADO.NET ── -->
     <section class="section">
-      <h2 class="sec-title" id="efcore">Entity Framework Core (EF Core)</h2>
-      <p><strong>EF Core</strong> is Microsoft's Object-Relational Mapper (ORM). It lets you work with a database using C# objects — no raw SQL needed (unless you want it).</p>
+      <h2 class="sec-title" id="adonet">ADO.NET — Database Access</h2>
+      <p><strong>ADO.NET</strong> (ActiveX Data Objects .NET) is the low-level .NET library for connecting to and querying databases. Unlike an ORM, you write raw SQL — giving you full control over exactly what queries run.</p>
+      <p>ADO.NET uses <strong>four core objects</strong> for any database operation:</p>
 
-      <h3 class="sub-title">DbContext — The Database Bridge</h3>
+      <div class="tbl-wrap">
+        <table>
+          <thead><tr><th>Object</th><th>Role</th></tr></thead>
+          <tbody>
+            <tr><td><code>SqlConnection</code></td><td>Opens and manages the connection to the SQL Server database</td></tr>
+            <tr><td><code>SqlCommand</code></td><td>Holds the SQL query or stored procedure to execute</td></tr>
+            <tr><td><code>SqlDataReader</code></td><td>Reads rows from a SELECT result — fast, forward-only stream</td></tr>
+            <tr><td><code>SqlDataAdapter</code></td><td>Fills a <code>DataSet</code> / <code>DataTable</code> — useful for disconnected data</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="callout callout-note">
+        <p><strong>Key rule:</strong> Always wrap <code>SqlConnection</code> and <code>SqlCommand</code> in a <code>using</code> block — they implement <code>IDisposable</code> so they are closed and released automatically even if an exception occurs.</p>
+      </div>
+
+      <h3 class="sub-title">Connection String Setup</h3>
       <div class="code-block">
-        <div class="code-header"><div class="code-dots"><div class="code-dot r"></div><div class="code-dot y"></div><div class="code-dot g"></div></div><span class="code-lang">Data/AppDbContext.cs</span></div>
-        <pre><span class="kw">using</span> Microsoft.EntityFrameworkCore;
-
-<span class="kw">public class</span> <span class="cl">AppDbContext</span> : <span class="cl">DbContext</span>
-{
-    <span class="kw">public</span> <span class="fn">AppDbContext</span>(<span class="cl">DbContextOptions</span>&lt;<span class="cl">AppDbContext</span>&gt; options)
-        : <span class="kw">base</span>(options) { }
-
-    <span class="cm">// Each DbSet maps to a table</span>
-    <span class="kw">public</span> <span class="cl">DbSet</span>&lt;<span class="cl">Product</span>&gt;  Products  { <span class="kw">get</span>; <span class="kw">set</span>; }
-    <span class="kw">public</span> <span class="cl">DbSet</span>&lt;<span class="cl">Category</span>&gt; Categories { <span class="kw">get</span>; <span class="kw">set</span>; }
-    <span class="kw">public</span> <span class="cl">DbSet</span>&lt;<span class="cl">Order</span>&gt;    Orders    { <span class="kw">get</span>; <span class="kw">set</span>; }
+        <div class="code-header"><div class="code-dots"><div class="code-dot r"></div><div class="code-dot y"></div><div class="code-dot g"></div></div><span class="code-lang">appsettings.json</span></div>
+        <pre>{
+  <span class="st">"ConnectionStrings"</span>: {
+    <span class="st">"Default"</span>: <span class="st">"Server=.;Database=ShopDB;Trusted_Connection=True;TrustServerCertificate=True;"</span>
+  }
 }</pre>
       </div>
 
-      <h3 class="sub-title">CRUD with EF Core</h3>
       <div class="code-block">
-        <div class="code-header"><div class="code-dots"><div class="code-dot r"></div><div class="code-dot y"></div><div class="code-dot g"></div></div><span class="code-lang">Full CRUD operations</span></div>
+        <div class="code-header"><div class="code-dots"><div class="code-dot r"></div><div class="code-dot y"></div><div class="code-dot g"></div></div><span class="code-lang">Reading connection string in a service</span></div>
         <pre><span class="kw">public class</span> <span class="cl">ProductService</span> : <span class="cl">IProductService</span>
 {
-    <span class="kw">private readonly</span> <span class="cl">AppDbContext</span> _db;
-    <span class="kw">public</span> <span class="fn">ProductService</span>(<span class="cl">AppDbContext</span> db) => _db = db;
+    <span class="kw">private readonly</span> <span class="kw">string</span> _connStr;
 
-    <span class="cm">// READ all</span>
-    <span class="kw">public async</span> <span class="cl">Task</span>&lt;<span class="cl">List</span>&lt;<span class="cl">Product</span>&gt;&gt; <span class="fn">GetAllAsync</span>()
-        => <span class="kw">await</span> _db.Products.<span class="fn">ToListAsync</span>();
-
-    <span class="cm">// READ one</span>
-    <span class="kw">public async</span> <span class="cl">Task</span>&lt;<span class="cl">Product</span>?&gt; <span class="fn">GetByIdAsync</span>(<span class="kw">int</span> id)
-        => <span class="kw">await</span> _db.Products.<span class="fn">FindAsync</span>(id);
-
-    <span class="cm">// CREATE</span>
-    <span class="kw">public async</span> <span class="cl">Task</span>&lt;<span class="cl">Product</span>&gt; <span class="fn">CreateAsync</span>(<span class="cl">CreateProductDto</span> dto)
+    <span class="kw">public</span> <span class="fn">ProductService</span>(<span class="cl">IConfiguration</span> config)
     {
-        <span class="kw">var</span> product = <span class="kw">new</span> <span class="cl">Product</span> { Name = dto.Name, Price = dto.Price };
-        _db.Products.<span class="fn">Add</span>(product);
-        <span class="kw">await</span> _db.<span class="fn">SaveChangesAsync</span>();
-        <span class="kw">return</span> product;
-    }
-
-    <span class="cm">// UPDATE</span>
-    <span class="kw">public async</span> <span class="cl">Task</span>&lt;<span class="kw">bool</span>&gt; <span class="fn">UpdateAsync</span>(<span class="kw">int</span> id, <span class="cl">UpdateProductDto</span> dto)
-    {
-        <span class="kw">var</span> product = <span class="kw">await</span> _db.Products.<span class="fn">FindAsync</span>(id);
-        <span class="kw">if</span> (product == <span class="kw">null</span>) <span class="kw">return false</span>;
-        product.Name  = dto.Name;
-        product.Price = dto.Price;
-        <span class="kw">await</span> _db.<span class="fn">SaveChangesAsync</span>();
-        <span class="kw">return true</span>;
-    }
-
-    <span class="cm">// DELETE</span>
-    <span class="kw">public async</span> <span class="cl">Task</span>&lt;<span class="kw">bool</span>&gt; <span class="fn">DeleteAsync</span>(<span class="kw">int</span> id)
-    {
-        <span class="kw">var</span> product = <span class="kw">await</span> _db.Products.<span class="fn">FindAsync</span>(id);
-        <span class="kw">if</span> (product == <span class="kw">null</span>) <span class="kw">return false</span>;
-        _db.Products.<span class="fn">Remove</span>(product);
-        <span class="kw">await</span> _db.<span class="fn">SaveChangesAsync</span>();
-        <span class="kw">return true</span>;
+        _connStr = config.<span class="fn">GetConnectionString</span>(<span class="st">"Default"</span>)!;
     }
 }</pre>
       </div>
 
-      <h3 class="sub-title">Migrations — Code First</h3>
+      <h3 class="sub-title">SELECT — Reading Data</h3>
       <div class="code-block">
-        <div class="code-header"><div class="code-dots"><div class="code-dot r"></div><div class="code-dot y"></div><div class="code-dot g"></div></div><span class="code-lang">CLI Commands</span></div>
-        <pre><span class="cm"># Create a migration (generates SQL from your model changes)</span>
-dotnet ef migrations add InitialCreate
+        <div class="code-header"><div class="code-dots"><div class="code-dot r"></div><div class="code-dot y"></div><div class="code-dot g"></div></div><span class="code-lang">SqlDataReader — read all products</span></div>
+        <pre><span class="kw">public</span> <span class="cl">List</span>&lt;<span class="cl">Product</span>&gt; <span class="fn">GetAll</span>()
+{
+    <span class="kw">var</span> products = <span class="kw">new</span> <span class="cl">List</span>&lt;<span class="cl">Product</span>&gt;();
 
-<span class="cm"># Apply migration to database (creates/alters tables)</span>
-dotnet ef database update
+    <span class="kw">using</span> (<span class="kw">var</span> conn = <span class="kw">new</span> <span class="cl">SqlConnection</span>(_connStr))
+    <span class="kw">using</span> (<span class="kw">var</span> cmd  = <span class="kw">new</span> <span class="cl">SqlCommand</span>(<span class="st">"SELECT Id, Name, Price, Stock FROM Products"</span>, conn))
+    {
+        conn.<span class="fn">Open</span>();
+        <span class="kw">using</span> (<span class="cl">SqlDataReader</span> reader = cmd.<span class="fn">ExecuteReader</span>())
+        {
+            <span class="kw">while</span> (reader.<span class="fn">Read</span>())              <span class="cm">// moves to next row</span>
+            {
+                products.<span class="fn">Add</span>(<span class="kw">new</span> <span class="cl">Product</span>
+                {
+                    Id    = (<span class="kw">int</span>)    reader[<span class="st">"Id"</span>],
+                    Name  = (<span class="kw">string</span>) reader[<span class="st">"Name"</span>],
+                    Price = (<span class="kw">decimal</span>)reader[<span class="st">"Price"</span>],
+                    Stock = (<span class="kw">int</span>)    reader[<span class="st">"Stock"</span>]
+                });
+            }
+        }
+    }
+    <span class="kw">return</span> products;
+}
 
-<span class="cm"># Revert last migration</span>
-dotnet ef migrations remove
+<span class="cm">// GET single row by ID — parameterised query (prevents SQL injection)</span>
+<span class="kw">public</span> <span class="cl">Product</span>? <span class="fn">GetById</span>(<span class="kw">int</span> id)
+{
+    <span class="kw">using</span> (<span class="kw">var</span> conn = <span class="kw">new</span> <span class="cl">SqlConnection</span>(_connStr))
+    <span class="kw">using</span> (<span class="kw">var</span> cmd  = <span class="kw">new</span> <span class="cl">SqlCommand</span>(<span class="st">"SELECT Id, Name, Price, Stock FROM Products WHERE Id = @Id"</span>, conn))
+    {
+        cmd.Parameters.<span class="fn">AddWithValue</span>(<span class="st">"@Id"</span>, id);   <span class="cm">// ← always use parameters, never string concat</span>
+        conn.<span class="fn">Open</span>();
+        <span class="kw">using</span> (<span class="cl">SqlDataReader</span> reader = cmd.<span class="fn">ExecuteReader</span>())
+        {
+            <span class="kw">if</span> (reader.<span class="fn">Read</span>())
+                <span class="kw">return new</span> <span class="cl">Product</span>
+                {
+                    Id    = (<span class="kw">int</span>)    reader[<span class="st">"Id"</span>],
+                    Name  = (<span class="kw">string</span>) reader[<span class="st">"Name"</span>],
+                    Price = (<span class="kw">decimal</span>)reader[<span class="st">"Price"</span>],
+                    Stock = (<span class="kw">int</span>)    reader[<span class="st">"Stock"</span>]
+                };
+        }
+    }
+    <span class="kw">return null</span>;
+}</pre>
+      </div>
 
-<span class="cm"># List all migrations</span>
-dotnet ef migrations list</pre>
+      <h3 class="sub-title">INSERT — Creating a Record</h3>
+      <div class="code-block">
+        <div class="code-header"><div class="code-dots"><div class="code-dot r"></div><div class="code-dot y"></div><div class="code-dot g"></div></div><span class="code-lang">ExecuteScalar — insert and return new ID</span></div>
+        <pre><span class="kw">public int</span> <span class="fn">Create</span>(<span class="cl">CreateProductDto</span> dto)
+{
+    <span class="kw">const string</span> sql = <span class="st">@"INSERT INTO Products (Name, Price, Stock)
+                        VALUES (@Name, @Price, @Stock);
+                        SELECT SCOPE_IDENTITY();"</span>;  <span class="cm">// returns newly inserted ID</span>
+
+    <span class="kw">using</span> (<span class="kw">var</span> conn = <span class="kw">new</span> <span class="cl">SqlConnection</span>(_connStr))
+    <span class="kw">using</span> (<span class="kw">var</span> cmd  = <span class="kw">new</span> <span class="cl">SqlCommand</span>(sql, conn))
+    {
+        cmd.Parameters.<span class="fn">AddWithValue</span>(<span class="st">"@Name"</span>,  dto.Name);
+        cmd.Parameters.<span class="fn">AddWithValue</span>(<span class="st">"@Price"</span>, dto.Price);
+        cmd.Parameters.<span class="fn">AddWithValue</span>(<span class="st">"@Stock"</span>, dto.Stock);
+
+        conn.<span class="fn">Open</span>();
+        <span class="kw">int</span> newId = <span class="fn">Convert</span>.<span class="fn">ToInt32</span>(cmd.<span class="fn">ExecuteScalar</span>());  <span class="cm">// returns single value</span>
+        <span class="kw">return</span> newId;
+    }
+}</pre>
+      </div>
+
+      <h3 class="sub-title">UPDATE &amp; DELETE — ExecuteNonQuery</h3>
+      <div class="code-block">
+        <div class="code-header"><div class="code-dots"><div class="code-dot r"></div><div class="code-dot y"></div><div class="code-dot g"></div></div><span class="code-lang">ExecuteNonQuery — rows affected</span></div>
+        <pre><span class="kw">public bool</span> <span class="fn">Update</span>(<span class="kw">int</span> id, <span class="cl">UpdateProductDto</span> dto)
+{
+    <span class="kw">const string</span> sql = <span class="st">"UPDATE Products SET Name=@Name, Price=@Price WHERE Id=@Id"</span>;
+
+    <span class="kw">using</span> (<span class="kw">var</span> conn = <span class="kw">new</span> <span class="cl">SqlConnection</span>(_connStr))
+    <span class="kw">using</span> (<span class="kw">var</span> cmd  = <span class="kw">new</span> <span class="cl">SqlCommand</span>(sql, conn))
+    {
+        cmd.Parameters.<span class="fn">AddWithValue</span>(<span class="st">"@Id"</span>,    id);
+        cmd.Parameters.<span class="fn">AddWithValue</span>(<span class="st">"@Name"</span>,  dto.Name);
+        cmd.Parameters.<span class="fn">AddWithValue</span>(<span class="st">"@Price"</span>, dto.Price);
+        conn.<span class="fn">Open</span>();
+        <span class="kw">int</span> rowsAffected = cmd.<span class="fn">ExecuteNonQuery</span>();  <span class="cm">// returns number of rows changed</span>
+        <span class="kw">return</span> rowsAffected > <span class="nm">0</span>;
+    }
+}
+
+<span class="kw">public bool</span> <span class="fn">Delete</span>(<span class="kw">int</span> id)
+{
+    <span class="kw">using</span> (<span class="kw">var</span> conn = <span class="kw">new</span> <span class="cl">SqlConnection</span>(_connStr))
+    <span class="kw">using</span> (<span class="kw">var</span> cmd  = <span class="kw">new</span> <span class="cl">SqlCommand</span>(<span class="st">"DELETE FROM Products WHERE Id = @Id"</span>, conn))
+    {
+        cmd.Parameters.<span class="fn">AddWithValue</span>(<span class="st">"@Id"</span>, id);
+        conn.<span class="fn">Open</span>();
+        <span class="kw">return</span> cmd.<span class="fn">ExecuteNonQuery</span>() > <span class="nm">0</span>;
+    }
+}</pre>
+      </div>
+
+      <h3 class="sub-title">Stored Procedures</h3>
+      <div class="code-block">
+        <div class="code-header"><div class="code-dots"><div class="code-dot r"></div><div class="code-dot y"></div><div class="code-dot g"></div></div><span class="code-lang">Calling a stored procedure</span></div>
+        <pre><span class="kw">public</span> <span class="cl">List</span>&lt;<span class="cl">Product</span>&gt; <span class="fn">GetByCategory</span>(<span class="kw">int</span> categoryId)
+{
+    <span class="kw">var</span> products = <span class="kw">new</span> <span class="cl">List</span>&lt;<span class="cl">Product</span>&gt;();
+
+    <span class="kw">using</span> (<span class="kw">var</span> conn = <span class="kw">new</span> <span class="cl">SqlConnection</span>(_connStr))
+    <span class="kw">using</span> (<span class="kw">var</span> cmd  = <span class="kw">new</span> <span class="cl">SqlCommand</span>(<span class="st">"sp_GetProductsByCategory"</span>, conn))
+    {
+        cmd.CommandType = <span class="cl">CommandType</span>.StoredProcedure;   <span class="cm">// ← tell ADO.NET it's a SP</span>
+        cmd.Parameters.<span class="fn">AddWithValue</span>(<span class="st">"@CategoryId"</span>, categoryId);
+
+        conn.<span class="fn">Open</span>();
+        <span class="kw">using</span> (<span class="kw">var</span> reader = cmd.<span class="fn">ExecuteReader</span>())
+        {
+            <span class="kw">while</span> (reader.<span class="fn">Read</span>())
+                products.<span class="fn">Add</span>(<span class="fn">MapProduct</span>(reader));
+        }
+    }
+    <span class="kw">return</span> products;
+}
+
+<span class="cm">// Private helper — maps a reader row to a Product object</span>
+<span class="kw">private static</span> <span class="cl">Product</span> <span class="fn">MapProduct</span>(<span class="cl">SqlDataReader</span> r) =&gt; <span class="kw">new</span>()
+{
+    Id    = r.<span class="fn">GetInt32</span>(<span class="fn">r.GetOrdinal</span>(<span class="st">"Id"</span>)),
+    Name  = r.<span class="fn">GetString</span>(<span class="fn">r.GetOrdinal</span>(<span class="st">"Name"</span>)),
+    Price = r.<span class="fn">GetDecimal</span>(<span class="fn">r.GetOrdinal</span>(<span class="st">"Price"</span>))
+};</pre>
+      </div>
+
+      <h3 class="sub-title">Three Execute Methods — When to Use Which</h3>
+      <div class="tbl-wrap">
+        <table>
+          <thead><tr><th>Method</th><th>Returns</th><th>Use for</th></tr></thead>
+          <tbody>
+            <tr><td><code>ExecuteReader()</code></td><td><code>SqlDataReader</code></td><td>SELECT — reading multiple rows</td></tr>
+            <tr><td><code>ExecuteScalar()</code></td><td>Single <code>object</code> (first col, first row)</td><td>SELECT COUNT(*), SELECT MAX(), or INSERT + SCOPE_IDENTITY()</td></tr>
+            <tr><td><code>ExecuteNonQuery()</code></td><td><code>int</code> rows affected</td><td>INSERT, UPDATE, DELETE — no rows to read back</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3 class="sub-title">Handling NULL values from database</h3>
+      <div class="code-block">
+        <div class="code-header"><div class="code-dots"><div class="code-dot r"></div><div class="code-dot y"></div><div class="code-dot g"></div></div><span class="code-lang">DBNull check</span></div>
+        <pre><span class="cm">// Database NULLs come back as DBNull.Value, not C# null — check before casting</span>
+Name        = reader[<span class="st">"Name"</span>] == <span class="cl">DBNull</span>.Value ? <span class="kw">null</span> : (<span class="kw">string</span>)reader[<span class="st">"Name"</span>],
+Description = reader.<span class="fn">IsDBNull</span>(reader.<span class="fn">GetOrdinal</span>(<span class="st">"Description"</span>))
+              ? <span class="kw">null</span>
+              : reader.<span class="fn">GetString</span>(reader.<span class="fn">GetOrdinal</span>(<span class="st">"Description"</span>))</pre>
+      </div>
+
+      <div class="callout callout-warn">
+        <p><strong>⚠ SQL Injection — always use parameters:</strong> Never concatenate user input directly into a SQL string. Always use <code>cmd.Parameters.AddWithValue("@Param", value)</code> or <code>cmd.Parameters.Add()</code>. Parameterised queries are the only safe way to include user data in SQL.</p>
+      </div>
+
+      <div class="callout callout-info">
+        <p><strong>EF Core — for later:</strong> EF Core is an ORM that sits on top of ADO.NET and auto-generates SQL from C# objects. You'll learn it after mastering ADO.NET. Everything you learn here (connections, transactions, SQL) is exactly what EF Core does under the hood.</p>
       </div>
     </section>
 
@@ -1144,7 +1271,7 @@ builder.Services.<span class="fn">AddControllers</span>(options =>
             <tr><td><strong>DI</strong></td><td>Register in <code>builder.Services</code>. Inject via constructor</td></tr>
             <tr><td><strong>Lifetimes</strong></td><td>Transient (new each), Scoped (per request), Singleton (app lifetime)</td></tr>
             <tr><td><strong>Middleware</strong></td><td>Registered in order in <code>Program.cs</code> after <code>builder.Build()</code></td></tr>
-            <tr><td><strong>EF Core</strong></td><td><code>DbContext</code> → <code>DbSet&lt;T&gt;</code> → <code>SaveChangesAsync()</code></td></tr>
+            <tr><td><strong>ADO.NET</strong></td><td><code>SqlConnection</code> → <code>SqlCommand</code> → <code>ExecuteReader/Scalar/NonQuery</code></td></tr>
             <tr><td><strong>Validation</strong></td><td>Data annotations on DTOs + <code>[ApiController]</code> = automatic 400</td></tr>
             <tr><td><strong>Swagger</strong></td><td><code>AddSwaggerGen()</code> + <code>UseSwagger()</code> → <code>/swagger</code></td></tr>
             <tr><td><strong>CORS</strong></td><td><code>AddCors()</code> + <code>UseCors()</code> — call before UseAuthorization</td></tr>
