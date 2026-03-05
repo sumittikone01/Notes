@@ -3,397 +3,343 @@
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>.NET Notes — Sumit's Learning Hub</title>
+<title>Sumit's .NET Hub — Notes</title>
 <link rel="preconnect" href="https://fonts.googleapis.com"/>
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
-<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=IBM+Plex+Mono:wght@400;500&family=Inter:wght@300;400;500&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=IBM+Plex+Mono:wght@300;400;500&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet"/>
 <style>
-  :root {
-    --bg: #08090e;
-    --bg2: #0f1018;
-    --bg3: #151620;
-    --border: rgba(255,255,255,0.07);
-    --accent: #7c6fff;
-    --accent2: #00d4ff;
-    --accent3: #ff6b9d;
-    --accent4: #39e09b;
-    --text: #e8e9f0;
-    --text-muted: #6b6e85;
-    --text-dim: #9698aa;
-    --card-glow: rgba(124,111,255,0.12);
-  }
-  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-  html { scroll-behavior: smooth; }
-  body {
-    background: var(--bg);
-    color: var(--text);
-    font-family: 'Inter', sans-serif;
-    font-weight: 300;
-    min-height: 100vh;
-    overflow-x: hidden;
-  }
+:root {
+  --bg:      #08090e;
+  --bg2:     #0d0f18;
+  --bg3:     #131622;
+  --border:  rgba(255,255,255,0.07);
+  --border2: rgba(255,255,255,0.04);
+  --c-purple: #8b7fff;
+  --c-cyan:   #00d4ff;
+  --c-green:  #3de8a0;
+  --c-pink:   #ff6fad;
+  --c-amber:  #f7b731;
+  --text:     #e4e6f0;
+  --text-dim: #9499b0;
+  --text-mut: #5a5e78;
+}
 
-  /* ── Background grid ── */
-  body::before {
-    content: '';
-    position: fixed;
-    inset: 0;
-    background-image:
-      linear-gradient(rgba(124,111,255,0.03) 1px, transparent 1px),
-      linear-gradient(90deg, rgba(124,111,255,0.03) 1px, transparent 1px);
-    background-size: 40px 40px;
-    pointer-events: none;
-    z-index: 0;
-  }
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; }
 
-  /* ── Orbs ── */
-  .orb {
-    position: fixed;
-    border-radius: 50%;
-    filter: blur(80px);
-    pointer-events: none;
-    z-index: 0;
-    animation: drift 12s ease-in-out infinite;
-  }
-  .orb1 { width: 500px; height: 500px; background: rgba(124,111,255,0.08); top: -200px; left: -150px; }
-  .orb2 { width: 400px; height: 400px; background: rgba(0,212,255,0.06); bottom: -100px; right: -100px; animation-delay: -6s; animation-duration: 15s; }
-  .orb3 { width: 300px; height: 300px; background: rgba(57,224,155,0.05); top: 50%; left: 50%; transform: translate(-50%,-50%); animation-delay: -3s; animation-duration: 18s; }
-  @keyframes drift {
-    0%, 100% { transform: translate(0, 0); }
-    33% { transform: translate(20px, -20px); }
-    66% { transform: translate(-15px, 15px); }
-  }
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'DM Sans', sans-serif;
+  font-weight: 300;
+  min-height: 100vh;
+  overflow-x: hidden;
+}
 
-  /* ── Nav ── */
-  nav {
-    position: fixed;
-    top: 0; left: 0; right: 0;
-    z-index: 100;
-    padding: 0 40px;
-    height: 64px;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    background: rgba(8,9,14,0.8);
-    backdrop-filter: blur(20px);
-    border-bottom: 1px solid var(--border);
-  }
-  .nav-logo {
-    font-family: 'Syne', sans-serif;
-    font-weight: 800;
-    font-size: 1.1rem;
-    letter-spacing: -0.02em;
-    background: linear-gradient(135deg, var(--accent), var(--accent2));
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
-  }
-  .nav-logo span { color: var(--text-muted); -webkit-text-fill-color: var(--text-muted); font-weight: 400; font-size: 0.85rem; margin-left: 8px; font-family: 'IBM Plex Mono', monospace; }
-  .nav-right {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-  }
-  .nav-pill {
-    font-family: 'IBM Plex Mono', monospace;
-    font-size: 0.7rem;
-    padding: 4px 10px;
-    border-radius: 20px;
-    border: 1px solid var(--border);
-    color: var(--text-muted);
-    background: transparent;
-    cursor: default;
-    transition: all 0.2s;
-  }
-  .nav-pill:hover { border-color: var(--accent); color: var(--accent); }
+/* ─── Noise texture overlay ─── */
+body::after {
+  content: '';
+  position: fixed; inset: 0;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.025'/%3E%3C/svg%3E");
+  pointer-events: none; z-index: 999; opacity: 0.5;
+}
 
-  /* ── Hero ── */
-  .hero {
-    position: relative;
-    z-index: 1;
-    min-height: 100vh;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    padding: 100px 40px 60px;
-    text-align: center;
-  }
-  .hero-badge {
-    display: inline-flex;
-    align-items: center;
-    gap: 8px;
-    font-family: 'IBM Plex Mono', monospace;
-    font-size: 0.72rem;
-    letter-spacing: 0.12em;
-    text-transform: uppercase;
-    color: var(--accent);
-    border: 1px solid rgba(124,111,255,0.3);
-    padding: 6px 16px;
-    border-radius: 20px;
-    background: rgba(124,111,255,0.06);
-    margin-bottom: 28px;
-    animation: fadeUp 0.6s ease both;
-  }
-  .hero-badge::before { content: '◆'; font-size: 0.55rem; }
-  .hero-title {
-    font-family: 'Syne', sans-serif;
-    font-weight: 800;
-    font-size: clamp(3rem, 8vw, 6.5rem);
-    letter-spacing: -0.04em;
-    line-height: 0.95;
-    margin-bottom: 12px;
-    animation: fadeUp 0.6s 0.1s ease both;
-  }
-  .hero-title .line1 { display: block; color: var(--text); }
-  .hero-title .line2 {
-    display: block;
-    background: linear-gradient(135deg, var(--accent) 0%, var(--accent2) 50%, var(--accent3) 100%);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
-  }
-  .hero-sub {
-    font-size: 1rem;
-    color: var(--text-muted);
-    font-weight: 300;
-    max-width: 420px;
-    line-height: 1.7;
-    margin-bottom: 60px;
-    animation: fadeUp 0.6s 0.2s ease both;
-  }
-  .hero-sub strong { color: var(--text-dim); font-weight: 500; }
+/* ─── Grid ─── */
+body::before {
+  content: '';
+  position: fixed; inset: 0;
+  background-image:
+    linear-gradient(rgba(139,127,255,0.025) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(139,127,255,0.025) 1px, transparent 1px);
+  background-size: 48px 48px;
+  pointer-events: none; z-index: 0;
+}
 
-  /* ── Scroll indicator ── */
-  .scroll-hint {
-    position: absolute;
-    bottom: 32px;
-    left: 50%;
-    transform: translateX(-50%);
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 6px;
-    color: var(--text-muted);
-    font-size: 0.7rem;
-    font-family: 'IBM Plex Mono', monospace;
-    letter-spacing: 0.1em;
-    animation: fadeUp 0.6s 0.6s ease both, bob 2s 1.2s ease-in-out infinite;
-  }
-  .scroll-hint::after { content: '↓'; font-size: 1rem; }
-  @keyframes bob { 0%,100%{transform:translateX(-50%) translateY(0)} 50%{transform:translateX(-50%) translateY(5px)} }
+/* ─── Orbs ─── */
+.orb {
+  position: fixed; border-radius: 50%;
+  filter: blur(100px); pointer-events: none; z-index: 0;
+  animation: drift 14s ease-in-out infinite;
+}
+.orb1 { width: 640px; height: 640px; background: rgba(139,127,255,0.07); top: -250px; left: -200px; }
+.orb2 { width: 480px; height: 480px; background: rgba(0,212,255,0.05);   bottom: -150px; right: -150px; animation-delay: -7s; }
+.orb3 { width: 360px; height: 360px; background: rgba(61,232,160,0.04);  top: 40%; left: 60%; animation-delay: -3.5s; }
+@keyframes drift {
+  0%,100% { transform: translate(0,0); }
+  33%      { transform: translate(24px,-20px); }
+  66%      { transform: translate(-18px,18px); }
+}
 
-  /* ── Cards section ── */
-  .cards-section {
-    position: relative;
-    z-index: 1;
-    padding: 80px 40px 120px;
-    max-width: 1100px;
-    margin: 0 auto;
-  }
-  .section-label {
-    font-family: 'IBM Plex Mono', monospace;
-    font-size: 0.7rem;
-    letter-spacing: 0.2em;
-    text-transform: uppercase;
-    color: var(--text-muted);
-    margin-bottom: 48px;
-    display: flex;
-    align-items: center;
-    gap: 12px;
-  }
-  .section-label::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+/* ─── Nav ─── */
+nav {
+  position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+  height: 62px;
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 0 48px;
+  background: rgba(8,9,14,0.85);
+  backdrop-filter: blur(24px);
+  border-bottom: 1px solid var(--border);
+}
+.nav-brand {
+  font-family: 'Syne', sans-serif;
+  font-weight: 800; font-size: 1.05rem;
+  letter-spacing: -0.02em;
+  display: flex; align-items: center; gap: 10px;
+}
+.nav-dot {
+  width: 8px; height: 8px; border-radius: 50%;
+  background: linear-gradient(135deg, var(--c-purple), var(--c-cyan));
+  box-shadow: 0 0 12px rgba(139,127,255,0.6);
+}
+.nav-name { color: var(--text); }
+.nav-name span {
+  color: var(--text-mut);
+  font-family: 'IBM Plex Mono', monospace;
+  font-weight: 300; font-size: 0.8rem; margin-left: 4px;
+}
+.nav-chips { display: flex; gap: 6px; }
+.chip {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 0.67rem; letter-spacing: 0.06em;
+  padding: 4px 11px; border-radius: 20px;
+  border: 1px solid var(--border);
+  color: var(--text-mut); background: transparent;
+  transition: all 0.2s;
+}
+.chip:hover { color: var(--c-purple); border-color: rgba(139,127,255,0.4); }
 
-  .cards-grid {
-    display: grid;
-    grid-template-columns: repeat(2, 1fr);
-    gap: 20px;
-  }
+/* ─── Hero ─── */
+.hero {
+  position: relative; z-index: 1;
+  min-height: 100vh;
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  padding: 110px 40px 80px;
+  text-align: center;
+}
 
-  .card {
-    position: relative;
-    border: 1px solid var(--border);
-    border-radius: 16px;
-    padding: 36px;
-    background: var(--bg2);
-    text-decoration: none;
-    color: inherit;
-    display: flex;
-    flex-direction: column;
-    gap: 16px;
-    overflow: hidden;
-    transition: transform 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease;
-    animation: fadeUp 0.5s ease both;
-    cursor: pointer;
-  }
-  .card:nth-child(1) { animation-delay: 0.1s; }
-  .card:nth-child(2) { animation-delay: 0.2s; }
-  .card:nth-child(3) { animation-delay: 0.3s; }
-  .card:nth-child(4) { animation-delay: 0.4s; }
+.hero-eyebrow {
+  display: inline-flex; align-items: center; gap: 8px;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 0.7rem; letter-spacing: 0.16em; text-transform: uppercase;
+  color: var(--c-purple);
+  border: 1px solid rgba(139,127,255,0.28);
+  background: rgba(139,127,255,0.06);
+  padding: 6px 18px; border-radius: 30px;
+  margin-bottom: 36px;
+  animation: riseUp 0.7s 0.1s ease both;
+}
+.hero-eyebrow::before { content: '◆'; font-size: 0.5rem; opacity: 0.7; }
 
-  .card::before {
-    content: '';
-    position: absolute;
-    inset: 0;
-    background: var(--card-hover-bg, transparent);
-    transition: background 0.3s ease;
-    border-radius: inherit;
-  }
-  .card:hover {
-    transform: translateY(-4px);
-    border-color: var(--card-color, var(--accent));
-    box-shadow: 0 20px 60px var(--card-shadow, var(--card-glow));
-  }
-  .card:hover::before {
-    background: var(--card-hover-bg);
-  }
+.hero-headline {
+  font-family: 'Syne', sans-serif;
+  font-weight: 800;
+  font-size: clamp(3.2rem, 9vw, 7.5rem);
+  letter-spacing: -0.04em;
+  line-height: 0.92;
+  margin-bottom: 28px;
+  animation: riseUp 0.7s 0.2s ease both;
+}
+.hl1 { display: block; color: var(--text); }
+.hl2 {
+  display: block;
+  background: linear-gradient(110deg, var(--c-purple) 0%, var(--c-cyan) 45%, var(--c-green) 100%);
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+}
 
-  /* Card color variants */
-  .card-purple { --card-color: #7c6fff; --card-shadow: rgba(124,111,255,0.15); --card-hover-bg: rgba(124,111,255,0.04); }
-  .card-cyan   { --card-color: #00d4ff; --card-shadow: rgba(0,212,255,0.12);   --card-hover-bg: rgba(0,212,255,0.04); }
-  .card-green  { --card-color: #39e09b; --card-shadow: rgba(57,224,155,0.12);  --card-hover-bg: rgba(57,224,155,0.04); }
-  .card-pink   { --card-color: #ff6b9d; --card-shadow: rgba(255,107,157,0.12); --card-hover-bg: rgba(255,107,157,0.04); }
+.hero-sub {
+  font-size: 1.05rem; color: var(--text-dim);
+  font-weight: 300; max-width: 480px; line-height: 1.75;
+  margin-bottom: 64px;
+  animation: riseUp 0.7s 0.3s ease both;
+}
+.hero-sub strong { color: var(--text); font-weight: 500; }
 
-  .card-icon {
-    width: 48px;
-    height: 48px;
-    border-radius: 12px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 1.4rem;
-    background: var(--icon-bg);
-    flex-shrink: 0;
-  }
-  .card-purple .card-icon { --icon-bg: rgba(124,111,255,0.12); }
-  .card-cyan   .card-icon { --icon-bg: rgba(0,212,255,0.1); }
-  .card-green  .card-icon { --icon-bg: rgba(57,224,155,0.1); }
-  .card-pink   .card-icon { --icon-bg: rgba(255,107,157,0.1); }
+/* ─── Scroll arrow ─── */
+.scroll-arrow {
+  position: absolute; bottom: 36px; left: 50%;
+  transform: translateX(-50%);
+  display: flex; flex-direction: column; align-items: center; gap: 6px;
+  color: var(--text-mut);
+  font-family: 'IBM Plex Mono', monospace; font-size: 0.65rem; letter-spacing: 0.12em;
+  animation: riseUp 0.7s 0.8s ease both, bob 2.2s 1.5s ease-in-out infinite;
+}
+.scroll-arrow svg { opacity: 0.5; }
+@keyframes bob {
+  0%,100%{ transform: translateX(-50%) translateY(0); }
+  50%    { transform: translateX(-50%) translateY(6px); }
+}
 
-  .card-header { display: flex; align-items: center; gap: 16px; }
+/* ─── Stats strip ─── */
+.stats {
+  position: relative; z-index: 1;
+  display: flex; justify-content: center;
+  border-top: 1px solid var(--border); border-bottom: 1px solid var(--border);
+  background: var(--bg2);
+}
+.stat {
+  flex: 1; max-width: 200px;
+  padding: 32px 24px; text-align: center;
+  border-right: 1px solid var(--border);
+}
+.stat:last-child { border-right: none; }
+.stat-val {
+  font-family: 'Syne', sans-serif; font-weight: 800; font-size: 2.2rem;
+  letter-spacing: -0.04em;
+  background: linear-gradient(135deg, var(--c-purple), var(--c-cyan));
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+  line-height: 1;
+}
+.stat-key {
+  font-family: 'IBM Plex Mono', monospace; font-size: 0.62rem;
+  letter-spacing: 0.14em; text-transform: uppercase;
+  color: var(--text-mut); margin-top: 6px;
+}
 
-  .card-num {
-    font-family: 'IBM Plex Mono', monospace;
-    font-size: 0.65rem;
-    color: var(--text-muted);
-    letter-spacing: 0.1em;
-    margin-left: auto;
-    align-self: flex-start;
-  }
-  .card-title {
-    font-family: 'Syne', sans-serif;
-    font-weight: 700;
-    font-size: 1.35rem;
-    letter-spacing: -0.02em;
-    color: var(--text);
-  }
-  .card-desc {
-    font-size: 0.875rem;
-    color: var(--text-muted);
-    line-height: 1.65;
-    font-weight: 300;
-  }
-  .card-tags {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 6px;
-    margin-top: 4px;
-  }
-  .tag {
-    font-family: 'IBM Plex Mono', monospace;
-    font-size: 0.65rem;
-    padding: 3px 8px;
-    border-radius: 4px;
-    background: rgba(255,255,255,0.04);
-    border: 1px solid var(--border);
-    color: var(--text-muted);
-    letter-spacing: 0.05em;
-  }
-  .card-arrow {
-    margin-top: auto;
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    font-size: 0.8rem;
-    font-weight: 500;
-    color: var(--card-color, var(--accent));
-    opacity: 0;
-    transform: translateX(-6px);
-    transition: opacity 0.25s, transform 0.25s;
-    font-family: 'IBM Plex Mono', monospace;
-    letter-spacing: 0.05em;
-  }
-  .card:hover .card-arrow { opacity: 1; transform: translateX(0); }
+/* ─── Cards section ─── */
+.topics {
+  position: relative; z-index: 1;
+  max-width: 1120px; margin: 0 auto;
+  padding: 88px 40px 120px;
+}
+.section-head {
+  display: flex; align-items: center; gap: 14px;
+  margin-bottom: 52px;
+}
+.section-head-label {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 0.68rem; letter-spacing: 0.2em; text-transform: uppercase;
+  color: var(--text-mut);
+  white-space: nowrap;
+}
+.section-head-line { flex: 1; height: 1px; background: var(--border); }
 
-  /* ── Stats bar ── */
-  .stats-bar {
-    position: relative;
-    z-index: 1;
-    border-top: 1px solid var(--border);
-    border-bottom: 1px solid var(--border);
-    display: flex;
-    justify-content: center;
-    gap: 0;
-    max-width: 100%;
-    overflow: hidden;
-    margin-bottom: 0;
-    background: var(--bg2);
-  }
-  .stat-item {
-    padding: 28px 48px;
-    text-align: center;
-    border-right: 1px solid var(--border);
-    flex: 1;
-    max-width: 220px;
-  }
-  .stat-item:last-child { border-right: none; }
-  .stat-num {
-    font-family: 'Syne', sans-serif;
-    font-weight: 800;
-    font-size: 2rem;
-    letter-spacing: -0.04em;
-    background: linear-gradient(135deg, var(--accent), var(--accent2));
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
-  }
-  .stat-label {
-    font-family: 'IBM Plex Mono', monospace;
-    font-size: 0.65rem;
-    color: var(--text-muted);
-    letter-spacing: 0.12em;
-    text-transform: uppercase;
-    margin-top: 4px;
-  }
+/* 2×2 grid with featured first card */
+.cards-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 18px;
+}
 
-  /* ── Footer ── */
-  footer {
-    position: relative;
-    z-index: 1;
-    text-align: center;
-    padding: 40px;
-    color: var(--text-muted);
-    font-family: 'IBM Plex Mono', monospace;
-    font-size: 0.7rem;
-    letter-spacing: 0.08em;
-    border-top: 1px solid var(--border);
-  }
-  footer span { color: var(--accent); }
+.card {
+  position: relative;
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  padding: 40px;
+  background: var(--bg2);
+  text-decoration: none; color: inherit;
+  display: flex; flex-direction: column; gap: 18px;
+  overflow: hidden;
+  transition: transform 0.3s cubic-bezier(.2,.8,.2,1), border-color 0.3s, box-shadow 0.3s;
+  animation: riseUp 0.5s ease both;
+}
+.card:nth-child(1){ animation-delay:0.15s; }
+.card:nth-child(2){ animation-delay:0.25s; }
+.card:nth-child(3){ animation-delay:0.35s; }
+.card:nth-child(4){ animation-delay:0.45s; }
 
-  /* ── Animations ── */
-  @keyframes fadeUp {
-    from { opacity: 0; transform: translateY(20px); }
-    to   { opacity: 1; transform: translateY(0); }
-  }
+/* glow gradient on hover */
+.card::before {
+  content: '';
+  position: absolute; inset: 0;
+  background: radial-gradient(ellipse 60% 60% at 30% 20%, var(--card-glow,transparent), transparent);
+  opacity: 0; transition: opacity 0.4s;
+  border-radius: inherit; pointer-events: none;
+}
+.card:hover { transform: translateY(-5px); border-color: var(--card-c); box-shadow: 0 24px 64px var(--card-shadow); }
+.card:hover::before { opacity: 1; }
 
-  @media (max-width: 700px) {
-    nav { padding: 0 20px; }
-    .hero { padding: 100px 20px 60px; }
-    .cards-section { padding: 60px 20px 80px; }
-    .cards-grid { grid-template-columns: 1fr; }
-    .stats-bar { flex-wrap: wrap; }
-    .stat-item { max-width: none; border-right: none; border-bottom: 1px solid var(--border); }
-  }
+/* Color themes */
+.card-cyan   { --card-c:#00d4ff; --card-shadow:rgba(0,212,255,0.12);   --card-glow:rgba(0,212,255,0.06); }
+.card-purple { --card-c:#8b7fff; --card-shadow:rgba(139,127,255,0.15); --card-glow:rgba(139,127,255,0.08); }
+.card-pink   { --card-c:#ff6fad; --card-shadow:rgba(255,111,173,0.13); --card-glow:rgba(255,111,173,0.07); }
+.card-green  { --card-c:#3de8a0; --card-shadow:rgba(61,232,160,0.12);  --card-glow:rgba(61,232,160,0.06); }
+.card-amber  { --card-c:#f7b731; --card-shadow:rgba(247,183,49,0.14);  --card-glow:rgba(247,183,49,0.07); }
+
+.card-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
+
+.card-icon {
+  width: 52px; height: 52px; border-radius: 14px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 1.5rem; flex-shrink: 0;
+  background: rgba(255,255,255,0.04);
+  border: 1px solid var(--border);
+}
+
+.card-num {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 0.62rem; color: var(--text-mut); letter-spacing: 0.1em;
+  padding: 4px 8px; border-radius: 6px;
+  border: 1px solid var(--border);
+  height: fit-content;
+}
+
+.card-title {
+  font-family: 'Syne', sans-serif; font-weight: 700;
+  font-size: 1.45rem; letter-spacing: -0.025em;
+  color: var(--text); margin-top: 18px;
+  line-height: 1.2;
+}
+
+.card-desc {
+  font-size: 0.875rem; color: var(--text-dim);
+  line-height: 1.7; font-weight: 300;
+}
+
+.card-tags { display: flex; flex-wrap: wrap; gap: 6px; }
+.tag {
+  font-family: 'IBM Plex Mono', monospace; font-size: 0.62rem;
+  padding: 3px 9px; border-radius: 5px;
+  background: rgba(255,255,255,0.03);
+  border: 1px solid var(--border); color: var(--text-mut);
+}
+
+.card-cta {
+  display: flex; align-items: center; gap: 8px;
+  font-family: 'IBM Plex Mono', monospace; font-size: 0.75rem;
+  font-weight: 500; letter-spacing: 0.04em;
+  color: var(--card-c);
+  margin-top: auto;
+  opacity: 0; transform: translateX(-8px);
+  transition: opacity 0.25s, transform 0.25s;
+}
+.card:hover .card-cta { opacity: 1; transform: translateX(0); }
+.card-cta svg { width: 14px; height: 14px; stroke: currentColor; fill: none; stroke-width: 2.5; }
+
+/* ─── Footer ─── */
+footer {
+  position: relative; z-index: 1;
+  border-top: 1px solid var(--border);
+  padding: 36px 40px;
+  display: flex; align-items: center; justify-content: space-between;
+  flex-wrap: wrap; gap: 12px;
+}
+.footer-left {
+  font-family: 'IBM Plex Mono', monospace; font-size: 0.68rem;
+  color: var(--text-mut); letter-spacing: 0.06em;
+}
+.footer-left span { color: var(--c-purple); }
+.footer-right {
+  font-family: 'IBM Plex Mono', monospace; font-size: 0.65rem;
+  color: var(--text-mut); letter-spacing: 0.08em;
+}
+
+@keyframes riseUp {
+  from { opacity: 0; transform: translateY(22px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@media (max-width: 720px) {
+  nav { padding: 0 20px; }
+  .nav-chips { display: none; }
+  .hero { padding: 100px 24px 80px; }
+  .topics { padding: 60px 20px 80px; }
+  .cards-grid { grid-template-columns: 1fr; }
+  .stats { flex-wrap: wrap; }
+  .stat { max-width: none; border-right: none; border-bottom: 1px solid var(--border); }
+  .stat:last-child { border-bottom: none; }
+  footer { flex-direction: column; text-align: center; }
+}
 </style>
 </head>
 <body>
@@ -402,147 +348,180 @@
 <div class="orb orb2"></div>
 <div class="orb orb3"></div>
 
-<!-- Nav -->
+<!-- ─── Nav ─── -->
 <nav>
-  <div class="nav-logo">.NET Notes <span>// Sumit</span></div>
-  <div class="nav-right">
-    <span class="nav-pill">ASP.NET Core</span>
-    <span class="nav-pill">C#</span>
-    <span class="nav-pill">MVC</span>
+  <div class="nav-brand">
+    <div class="nav-dot"></div>
+    <div class="nav-name">.NET Notes <span>// Sumit</span></div>
+  </div>
+  <div class="nav-chips">
+    <span class="chip">ASP.NET Core</span>
+    <span class="chip">C# 12</span>
+    <span class="chip">MVC</span>
   </div>
 </nav>
 
-<!-- Hero -->
+<!-- ─── Hero ─── -->
 <section class="hero">
-  <div class="hero-badge">Learning Roadmap — Month 1</div>
-  <h1 class="hero-title">
-    <span class="line1">Sumit's</span>
-    <span class="line2">.NET Hub</span>
+  <div class="hero-eyebrow">Learning Roadmap — Month 1</div>
+  <h1 class="hero-headline">
+    <span class="hl1">Sumit's</span>
+    <span class="hl2">.NET Hub</span>
   </h1>
   <p class="hero-sub">
-    Structured notes for <strong>ASP.NET Core MVC</strong> development.<br/>
-    Every concept, every diagram, every example — all in one place.
+    Structured, hand-crafted notes for <strong>ASP.NET Core MVC</strong> development.<br/>
+    Every concept, every diagram, every example — built from scratch.
   </p>
-  <div class="scroll-hint">scroll to explore</div>
+  <div class="scroll-arrow">
+    EXPLORE
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <line x1="12" y1="5" x2="12" y2="19"/><polyline points="19,12 12,19 5,12"/>
+    </svg>
+  </div>
 </section>
 
-<!-- Stats bar -->
-<div class="stats-bar">
-  <div class="stat-item">
-    <div class="stat-num">4</div>
-    <div class="stat-label">Topics Covered</div>
-  </div>
-  <div class="stat-item">
-    <div class="stat-num">C#</div>
-    <div class="stat-label">Language</div>
-  </div>
-  <div class="stat-item">
-    <div class="stat-num">.NET</div>
-    <div class="stat-label">Platform</div>
-  </div>
-  <div class="stat-item">
-    <div class="stat-num">∞</div>
-    <div class="stat-label">Learning</div>
-  </div>
+<!-- ─── Stats ─── -->
+<div class="stats">
+  <div class="stat"><div class="stat-val">5</div><div class="stat-key">Topics Covered</div></div>
+  <div class="stat"><div class="stat-val">C#</div><div class="stat-key">Language</div></div>
+  <div class="stat"><div class="stat-val">.NET</div><div class="stat-key">Platform</div></div>
+  <div class="stat"><div class="stat-val">MVC</div><div class="stat-key">Pattern</div></div>
+  <div class="stat"><div class="stat-val">∞</div><div class="stat-key">Learning</div></div>
 </div>
 
-<!-- Cards -->
-<section class="cards-section">
-  <div class="section-label">// choose a topic</div>
+<!-- ─── Cards ─── -->
+<section class="topics">
+  <div class="section-head">
+    <div class="section-head-label">// choose a topic</div>
+    <div class="section-head-line"></div>
+  </div>
 
   <div class="cards-grid">
 
     <!-- CLR -->
     <a class="card card-cyan" href="clr.html">
-      <div class="card-header">
+      <div class="card-top">
         <div class="card-icon">⚙️</div>
-        <div>
-          <div class="card-num">01 / 04</div>
-          <h2 class="card-title">CLR & .NET Runtime</h2>
-        </div>
+        <div class="card-num">01 / 04</div>
       </div>
+      <h2 class="card-title">CLR &amp; .NET Runtime</h2>
       <p class="card-desc">
-        Understand what happens before your code runs. Common Language Runtime, JIT compilation, Garbage Collection, CTS, CLS, and the assembly lifecycle.
+        What happens before your code even runs. Common Language Runtime, JIT compilation, Garbage Collection, CTS, CLS, assemblies, and the managed execution lifecycle.
       </p>
       <div class="card-tags">
         <span class="tag">CLR</span>
         <span class="tag">JIT</span>
         <span class="tag">GC</span>
-        <span class="tag">CTS</span>
+        <span class="tag">CTS / CLS</span>
+        <span class="tag">MSIL</span>
         <span class="tag">Assemblies</span>
       </div>
-      <div class="card-arrow">Open Notes →</div>
+      <div class="card-cta">
+        Open Notes
+        <svg viewBox="0 0 24 24"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12,5 19,12 12,19"/></svg>
+      </div>
     </a>
 
     <!-- OOP -->
     <a class="card card-purple" href="oops.html">
-      <div class="card-header">
+      <div class="card-top">
         <div class="card-icon">🧬</div>
-        <div>
-          <div class="card-num">02 / 04</div>
-          <h2 class="card-title">OOP in C#</h2>
-        </div>
+        <div class="card-num">02 / 04</div>
       </div>
+      <h2 class="card-title">OOP in C#</h2>
       <p class="card-desc">
-        All four pillars of OOP in C# — classes, objects, inheritance, polymorphism, abstraction, and encapsulation. Mapped clearly from your Java foundation.
+        All four pillars — encapsulation, inheritance, polymorphism, abstraction. Classes, constructors, properties, interfaces, abstract classes, and the static keyword.
       </p>
       <div class="card-tags">
         <span class="tag">Classes</span>
         <span class="tag">Inheritance</span>
-        <span class="tag">Interfaces</span>
         <span class="tag">Polymorphism</span>
+        <span class="tag">Interfaces</span>
+        <span class="tag">Abstraction</span>
       </div>
-      <div class="card-arrow">Open Notes →</div>
+      <div class="card-cta">
+        Open Notes
+        <svg viewBox="0 0 24 24"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12,5 19,12 12,19"/></svg>
+      </div>
     </a>
 
     <!-- Exception Handling -->
     <a class="card card-pink" href="exception-handling.html">
-      <div class="card-header">
+      <div class="card-top">
         <div class="card-icon">🛡️</div>
-        <div>
-          <div class="card-num">03 / 04</div>
-          <h2 class="card-title">Exception Handling</h2>
-        </div>
+        <div class="card-num">03 / 04</div>
       </div>
+      <h2 class="card-title">Exception Handling</h2>
       <p class="card-desc">
-        try, catch, finally, throw, custom exceptions, exception filters with <code style="font-family:'IBM Plex Mono',monospace;font-size:0.8em;color:#ff6b9d">when</code>, the using statement, and inner exceptions — all covered.
+        try, catch, finally, throw, re-throw, custom exceptions, exception filters with <code style="font-family:'IBM Plex Mono',monospace;font-size:0.82em;color:#ff6fad">when</code>, the <code style="font-family:'IBM Plex Mono',monospace;font-size:0.82em;color:#ff6fad">using</code> statement, InnerException, and propagation.
       </p>
       <div class="card-tags">
         <span class="tag">try-catch</span>
         <span class="tag">finally</span>
         <span class="tag">throw</span>
-        <span class="tag">Custom Exceptions</span>
         <span class="tag">when</span>
+        <span class="tag">Custom Exceptions</span>
+        <span class="tag">using</span>
       </div>
-      <div class="card-arrow">Open Notes →</div>
+      <div class="card-cta">
+        Open Notes
+        <svg viewBox="0 0 24 24"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12,5 19,12 12,19"/></svg>
+      </div>
     </a>
 
     <!-- Collections -->
-    <a class="card card-green" href="collection.html">
-      <div class="card-header">
+    <a class="card card-green" href="csharp-collections-notes.html">
+      <div class="card-top">
         <div class="card-icon">📦</div>
-        <div>
-          <div class="card-num">04 / 04</div>
-          <h2 class="card-title">Collections</h2>
-        </div>
+        <div class="card-num">04 / 05</div>
       </div>
+      <h2 class="card-title">Collections</h2>
       <p class="card-desc">
-        List, Dictionary, Stack, Queue, HashSet, LinkedList and more. Generic collections, IEnumerable, LINQ basics, and when to use which structure.
+        List, Dictionary, Stack, Queue, HashSet, SortedList, LinkedList and more. Generic vs non-generic, IEnumerable, LINQ basics, and when to use which structure.
       </p>
       <div class="card-tags">
         <span class="tag">List&lt;T&gt;</span>
         <span class="tag">Dictionary</span>
         <span class="tag">Stack / Queue</span>
+        <span class="tag">HashSet</span>
         <span class="tag">IEnumerable</span>
       </div>
-      <div class="card-arrow">Open Notes →</div>
+      <div class="card-cta">
+        Open Notes
+        <svg viewBox="0 0 24 24"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12,5 19,12 12,19"/></svg>
+      </div>
+    </a>
+
+    <!-- ASP.NET Web API -->
+    <a class="card card-amber" href="aspnet.html">
+      <div class="card-top">
+        <div class="card-icon">🌐</div>
+        <div class="card-num">05 / 05</div>
+      </div>
+      <h2 class="card-title">ASP.NET Core Web API</h2>
+      <p class="card-desc">
+        HTTP methods, routing, controllers, model binding, IActionResult, middleware pipeline, dependency injection, EF Core, Swagger, CORS, filters, and JWT auth.
+      </p>
+      <div class="card-tags">
+        <span class="tag">Controllers</span>
+        <span class="tag">Routing</span>
+        <span class="tag">Middleware</span>
+        <span class="tag">DI</span>
+        <span class="tag">EF Core</span>
+        <span class="tag">Swagger</span>
+      </div>
+      <div class="card-cta">
+        Open Notes
+        <svg viewBox="0 0 24 24"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12,5 19,12 12,19"/></svg>
+      </div>
     </a>
 
   </div>
 </section>
 
 <footer>
-  Built by <span>Sumit</span> · ASP.NET Core MVC Learning Journey · Month 1
+  <div class="footer-left">Built by <span>Sumit</span> · ASP.NET Core MVC Learning Journey · Month 1</div>
+  <div class="footer-right">C# · .NET · MVC · CLR</div>
 </footer>
 
 </body>

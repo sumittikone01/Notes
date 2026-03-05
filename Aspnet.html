@@ -1,0 +1,1186 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>ASP.NET Core Web API — .NET Notes</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=IBM+Plex+Mono:ital,wght@0,400;0,500;1,400&family=Inter:wght@300;400;500&display=swap" rel="stylesheet"/>
+<style>
+:root {
+  --bg: #08090e; --bg2: #0f1018; --bg3: #151620;
+  --border: rgba(255,255,255,0.07);
+  --accent: #f7b731; --accent-dim: rgba(247,183,49,0.09);
+  --accent2: #ff8c42;
+  --text: #e8e9f0; --text-muted: #6b6e85; --text-dim: #9698aa;
+  --code-bg: #0d0e16; --code-border: rgba(247,183,49,0.15);
+  --sidebar-w: 270px;
+}
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; }
+body { background: var(--bg); color: var(--text); font-family: 'Inter', sans-serif; font-weight: 300; line-height: 1.7; overflow-x: hidden; }
+body::before { content: ''; position: fixed; inset: 0; background-image: linear-gradient(rgba(247,183,49,0.018) 1px, transparent 1px), linear-gradient(90deg, rgba(247,183,49,0.018) 1px, transparent 1px); background-size: 40px 40px; pointer-events: none; z-index: 0; }
+.orb { position: fixed; border-radius: 50%; filter: blur(110px); pointer-events: none; z-index: 0; }
+.orb1 { width: 650px; height: 650px; background: rgba(247,183,49,0.05); top: -250px; right: -200px; }
+.orb2 { width: 450px; height: 450px; background: rgba(255,140,66,0.04); bottom: -100px; left: -150px; }
+
+/* ── Nav ── */
+nav {
+  position: fixed; top: 0; left: 0; right: 0; z-index: 300;
+  height: 60px; display: flex; align-items: center; padding: 0 20px; gap: 10px;
+  background: rgba(8,9,14,0.92); backdrop-filter: blur(20px);
+  border-bottom: 1px solid var(--border);
+}
+.nav-back { display:flex; align-items:center; gap:6px; font-family:'IBM Plex Mono',monospace; font-size:0.72rem; color:var(--text-muted); text-decoration:none; padding:5px 10px; border-radius:6px; border:1px solid var(--border); transition:all 0.2s; white-space:nowrap; }
+.nav-back:hover { color:var(--accent); border-color:var(--accent); }
+.nav-sep { color:var(--border); flex-shrink:0; }
+.nav-title { font-family:'Syne',sans-serif; font-weight:700; font-size:0.88rem; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.nav-topics { display:flex; gap:4px; margin-left:12px; }
+.nav-topic { font-family:'IBM Plex Mono',monospace; font-size:0.63rem; padding:4px 8px; border-radius:5px; color:var(--text-muted); text-decoration:none; border:1px solid transparent; transition:all 0.2s; white-space:nowrap; }
+.nav-topic:hover { color:var(--text); border-color:var(--border); }
+.nav-topic.active { color:var(--accent); border-color:rgba(247,183,49,0.35); background:var(--accent-dim); }
+.nav-badge { margin-left:auto; font-family:'IBM Plex Mono',monospace; font-size:0.63rem; letter-spacing:0.1em; color:var(--accent); background:var(--accent-dim); border:1px solid rgba(247,183,49,0.2); padding:3px 10px; border-radius:12px; white-space:nowrap; }
+/* Hamburger (mobile only) */
+.menu-btn { display:none; align-items:center; justify-content:center; width:34px; height:34px; background:none; border:1px solid var(--border); border-radius:6px; cursor:pointer; flex-shrink:0; }
+.menu-btn span { display:block; width:16px; height:1.5px; background:var(--text-muted); position:relative; transition:0.2s; }
+.menu-btn span::before, .menu-btn span::after { content:''; position:absolute; width:16px; height:1.5px; background:var(--text-muted); left:0; transition:0.2s; }
+.menu-btn span::before { top:-5px; } .menu-btn span::after { top:5px; }
+
+/* ── Layout ── */
+.layout { position:relative; z-index:1; display:flex; padding-top:60px; min-height:100vh; }
+
+/* ── Sidebar ── */
+.sidebar {
+  position: fixed; top:60px; left:0; bottom:0; width:var(--sidebar-w);
+  overflow-y:auto; padding:24px 0; border-right:1px solid var(--border);
+  background:var(--bg); scrollbar-width:none; z-index:200;
+  transition: transform 0.3s ease;
+}
+.sidebar::-webkit-scrollbar { display:none; }
+.sidebar-section { padding:0 14px; margin-bottom:20px; }
+.sidebar-group-label { font-family:'IBM Plex Mono',monospace; font-size:0.58rem; letter-spacing:0.2em; text-transform:uppercase; color:var(--text-muted); padding:0 8px; margin-bottom:6px; margin-top:16px; }
+.sidebar-link { display:flex; align-items:center; gap:8px; padding:6px 8px; border-radius:6px; font-size:0.8rem; color:var(--text-muted); text-decoration:none; transition:all 0.18s; }
+.sidebar-link:hover { color:var(--text); background:rgba(255,255,255,0.04); }
+.sidebar-link.active { color:var(--accent); background:var(--accent-dim); }
+.sidebar-link .dot { width:4px; height:4px; border-radius:50%; background:currentColor; flex-shrink:0; opacity:0.5; }
+/* overlay for mobile */
+.sidebar-overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.6); z-index:199; }
+
+/* ── Main ── */
+.main { margin-left:var(--sidebar-w); flex:1; max-width:880px; padding:52px 60px 120px; }
+
+/* ── Page header ── */
+.page-header { margin-bottom:60px; padding-bottom:36px; border-bottom:1px solid var(--border); }
+.page-crumb { font-family:'IBM Plex Mono',monospace; font-size:0.68rem; color:var(--text-muted); letter-spacing:0.1em; margin-bottom:14px; }
+.page-crumb span { color:var(--accent); }
+.page-title { font-family:'Syne',sans-serif; font-weight:800; font-size:clamp(2.2rem,5vw,3.2rem); letter-spacing:-0.04em; line-height:0.95; margin-bottom:14px; }
+.page-title .hi { color:var(--text); display:block; }
+.page-title .lo { display:block; background:linear-gradient(135deg, var(--accent), var(--accent2)); -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text; }
+.page-desc { font-size:0.92rem; color:var(--text-muted); max-width:520px; line-height:1.7; }
+
+/* ── Section ── */
+.section { margin-bottom:68px; }
+h2.sec-title { font-family:'Syne',sans-serif; font-weight:700; font-size:1.45rem; letter-spacing:-0.02em; color:var(--text); margin-bottom:18px; display:flex; align-items:center; gap:12px; scroll-margin-top:80px; }
+h2.sec-title::before { content:''; display:block; width:4px; height:22px; background:var(--accent); border-radius:2px; flex-shrink:0; }
+h3.sub-title { font-family:'Syne',sans-serif; font-weight:600; font-size:1.05rem; color:var(--text-dim); margin:26px 0 12px; letter-spacing:-0.01em; }
+p { margin-bottom:12px; color:var(--text-dim); font-size:0.91rem; }
+p strong { color:var(--text); font-weight:500; }
+
+/* ── Code ── */
+.code-block { background:var(--code-bg); border:1px solid var(--code-border); border-radius:10px; margin:18px 0; overflow:hidden; }
+.code-header { display:flex; align-items:center; padding:9px 14px; border-bottom:1px solid var(--code-border); background:rgba(247,183,49,0.03); gap:8px; }
+.code-dots { display:flex; gap:5px; }
+.code-dot { width:10px; height:10px; border-radius:50%; }
+.code-dot.r{background:#ff5f57;} .code-dot.y{background:#ffbd2e;} .code-dot.g{background:#27c93f;}
+.code-lang { font-family:'IBM Plex Mono',monospace; font-size:0.63rem; letter-spacing:0.1em; color:var(--accent); margin-left:auto; text-transform:uppercase; }
+pre { padding:18px 20px; overflow-x:auto; font-family:'IBM Plex Mono',monospace; font-size:0.8rem; line-height:1.65; color:#cdd6f4; scrollbar-width:thin; scrollbar-color:var(--border) transparent; }
+pre::-webkit-scrollbar { height:4px; }
+pre::-webkit-scrollbar-thumb { background:var(--border); border-radius:2px; }
+.kw{color:#cba6f7;} .cl{color:#89dceb;} .fn{color:#89b4fa;}
+.st{color:#a6e3a1;} .cm{color:#585b70;font-style:italic;}
+.nm{color:#fab387;} .ac{color:#f38ba8;} .at{color:#f7b731;}
+code { font-family:'IBM Plex Mono',monospace; font-size:0.8em; background:rgba(247,183,49,0.09); border:1px solid rgba(247,183,49,0.18); padding:1px 6px; border-radius:4px; color:var(--accent); }
+
+/* ── Callouts ── */
+.callout { border-radius:10px; padding:16px 18px; margin:18px 0; border-left:3px solid; font-size:0.86rem; line-height:1.65; }
+.callout p { margin:0; font-size:inherit; }
+.callout-note { background:rgba(247,183,49,0.06); border-color:var(--accent); color:#908060; }
+.callout-note strong { color:var(--accent); }
+.callout-tip  { background:rgba(57,224,155,0.06); border-color:#39e09b; color:#7a9a8a; }
+.callout-tip strong { color:#39e09b; }
+.callout-warn { background:rgba(248,113,113,0.06); border-color:#f87171; color:#a07070; }
+.callout-warn strong { color:#f87171; }
+.callout-info { background:rgba(124,111,255,0.07); border-color:#7c6fff; color:#8080b0; }
+.callout-info strong { color:#7c6fff; }
+
+/* ── Tables ── */
+.tbl-wrap { overflow-x:auto; margin:18px 0; border-radius:10px; border:1px solid var(--border); }
+table { width:100%; border-collapse:collapse; font-size:0.84rem; }
+thead tr { background:var(--bg3); }
+th { font-family:'IBM Plex Mono',monospace; font-size:0.68rem; letter-spacing:0.1em; text-transform:uppercase; color:var(--text-muted); padding:11px 14px; text-align:left; font-weight:500; border-bottom:1px solid var(--border); }
+td { padding:10px 14px; color:var(--text-dim); border-bottom:1px solid var(--border); vertical-align:top; line-height:1.6; }
+tr:last-child td { border-bottom:none; }
+tr:hover td { background:rgba(255,255,255,0.02); }
+td code { font-size:0.76em; }
+.yes{color:#39e09b;font-weight:500;} .no{color:#f38ba8;font-weight:500;}
+.meth { display:inline-block; font-family:'IBM Plex Mono',monospace; font-size:0.7rem; padding:2px 8px; border-radius:4px; font-weight:500; }
+.get  { background:rgba(57,224,155,0.12);  color:#39e09b; border:1px solid rgba(57,224,155,0.25); }
+.post { background:rgba(89,161,255,0.12);  color:#59a1ff; border:1px solid rgba(89,161,255,0.25); }
+.put  { background:rgba(247,183,49,0.12);  color:#f7b731; border:1px solid rgba(247,183,49,0.25); }
+.del  { background:rgba(248,113,113,0.12); color:#f87171; border:1px solid rgba(248,113,113,0.25); }
+.patch{ background:rgba(192,132,252,0.12); color:#c084fc; border:1px solid rgba(192,132,252,0.25); }
+
+/* ── Flow / Diagram ── */
+.flow { background:var(--code-bg); border:1px solid var(--code-border); border-radius:10px; padding:22px 20px; margin:18px 0; font-family:'IBM Plex Mono',monospace; font-size:0.77rem; line-height:2; color:#cdd6f4; overflow-x:auto; }
+.flow-box{color:#89b4fa;} .flow-arrow{color:var(--accent);} .flow-note{color:#585b70;font-style:italic;}
+
+/* ── Status badge grid ── */
+.status-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(220px,1fr)); gap:10px; margin:18px 0; }
+.status-card { background:var(--bg2); border:1px solid var(--border); border-radius:8px; padding:14px 16px; }
+.status-code { font-family:'IBM Plex Mono',monospace; font-size:1.1rem; font-weight:500; margin-bottom:4px; }
+.s2xx { color:#39e09b; } .s3xx { color:#89b4fa; } .s4xx { color:#f7b731; } .s5xx { color:#f87171; }
+.status-name { font-size:0.8rem; color:var(--text); margin-bottom:3px; }
+.status-desc { font-size:0.73rem; color:var(--text-muted); line-height:1.4; }
+
+/* ── Steps list ── */
+ol.steps { list-style:none; counter-reset:step; padding:0; }
+ol.steps li { counter-increment:step; display:flex; gap:12px; margin-bottom:12px; font-size:0.88rem; color:var(--text-dim); align-items:flex-start; }
+ol.steps li::before { content:counter(step); display:flex; align-items:center; justify-content:center; min-width:24px; height:24px; background:var(--accent-dim); border:1px solid rgba(247,183,49,0.3); border-radius:6px; font-family:'IBM Plex Mono',monospace; font-size:0.7rem; color:var(--accent); flex-shrink:0; margin-top:2px; }
+ol.steps li strong { color:var(--text); }
+
+hr { border:none; border-top:1px solid var(--border); margin:44px 0; }
+
+/* ── Responsive ── */
+@media (max-width: 960px) {
+  .nav-topics { display:none; }
+}
+@media (max-width: 860px) {
+  .sidebar { transform: translateX(-100%); }
+  .sidebar.open { transform: translateX(0); }
+  .sidebar-overlay.open { display:block; }
+  .main { margin-left:0; padding:40px 24px 100px; }
+  .menu-btn { display:flex; }
+  .nav-badge { display:none; }
+}
+@media (max-width: 500px) {
+  nav { padding:0 14px; gap:8px; }
+  .nav-title { font-size:0.8rem; }
+  .main { padding:32px 16px 100px; }
+  .page-title { font-size:2rem; }
+  pre { font-size:0.74rem; }
+  .status-grid { grid-template-columns:1fr 1fr; }
+}
+</style>
+</head>
+<body>
+<div class="orb orb1"></div>
+<div class="orb orb2"></div>
+
+<!-- Nav -->
+<nav>
+  <a class="nav-back" href="index.html">← Home</a>
+  <span class="nav-sep">/</span>
+  <span class="nav-title">ASP.NET Core Web API</span>
+  <div class="nav-topics">
+    <a class="nav-topic" href="clr.html">CLR</a>
+    <a class="nav-topic" href="oops.html">OOP</a>
+    <a class="nav-topic" href="exception-handling.html">Exceptions</a>
+    <a class="nav-topic" href="collection.html">Collections</a>
+    <a class="nav-topic active" href="aspnet.html">Web API</a>
+  </div>
+  <div class="nav-badge">ASP.NET Core</div>
+  <button class="menu-btn" id="menuBtn" aria-label="Menu">
+    <span></span>
+  </button>
+</nav>
+
+<div class="sidebar-overlay" id="overlay"></div>
+
+<div class="layout">
+  <!-- Sidebar -->
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-section">
+      <div class="sidebar-group-label">// Foundations</div>
+      <a class="sidebar-link active" href="#what-is"><span class="dot"></span>What is Web API?</a>
+      <a class="sidebar-link" href="#http-basics"><span class="dot"></span>HTTP Basics</a>
+      <a class="sidebar-link" href="#http-methods"><span class="dot"></span>HTTP Methods</a>
+      <a class="sidebar-link" href="#status-codes"><span class="dot"></span>Status Codes</a>
+
+      <div class="sidebar-group-label">// Project Structure</div>
+      <a class="sidebar-link" href="#project-structure"><span class="dot"></span>Project Structure</a>
+      <a class="sidebar-link" href="#program-cs"><span class="dot"></span>Program.cs</a>
+      <a class="sidebar-link" href="#appsettings"><span class="dot"></span>appsettings.json</a>
+
+      <div class="sidebar-group-label">// Controllers</div>
+      <a class="sidebar-link" href="#controllers"><span class="dot"></span>Controllers &amp; Actions</a>
+      <a class="sidebar-link" href="#routing"><span class="dot"></span>Routing</a>
+      <a class="sidebar-link" href="#action-results"><span class="dot"></span>IActionResult</a>
+      <a class="sidebar-link" href="#model-binding"><span class="dot"></span>Model Binding</a>
+
+      <div class="sidebar-group-label">// Models</div>
+      <a class="sidebar-link" href="#models"><span class="dot"></span>Models &amp; DTOs</a>
+      <a class="sidebar-link" href="#validation"><span class="dot"></span>Data Annotations</a>
+
+      <div class="sidebar-group-label">// Architecture</div>
+      <a class="sidebar-link" href="#middleware"><span class="dot"></span>Middleware Pipeline</a>
+      <a class="sidebar-link" href="#di"><span class="dot"></span>Dependency Injection</a>
+      <a class="sidebar-link" href="#services"><span class="dot"></span>Service Lifetimes</a>
+
+      <div class="sidebar-group-label">// Advanced</div>
+      <a class="sidebar-link" href="#efcore"><span class="dot"></span>Entity Framework Core</a>
+      <a class="sidebar-link" href="#swagger"><span class="dot"></span>Swagger / OpenAPI</a>
+      <a class="sidebar-link" href="#cors"><span class="dot"></span>CORS</a>
+      <a class="sidebar-link" href="#filters"><span class="dot"></span>Action Filters</a>
+      <a class="sidebar-link" href="#auth"><span class="dot"></span>Auth Basics</a>
+      <a class="sidebar-link" href="#summary"><span class="dot"></span>Summary</a>
+    </div>
+  </aside>
+
+  <!-- Main -->
+  <main class="main">
+
+    <div class="page-header">
+      <div class="page-crumb">dotnet-notes / <span>aspnet-web-api</span></div>
+      <h1 class="page-title">
+        <span class="hi">ASP.NET Core</span>
+        <span class="lo">Web API</span>
+      </h1>
+      <p class="page-desc">A complete reference for building Web APIs with ASP.NET Core — from HTTP basics and controllers to middleware, dependency injection, EF Core, and authentication.</p>
+    </div>
+
+    <!-- ── 1. What is Web API ── -->
+    <section class="section">
+      <h2 class="sec-title" id="what-is">What is ASP.NET Core Web API?</h2>
+      <p><strong>ASP.NET Core</strong> is Microsoft's modern, cross-platform web framework built on .NET. A <strong>Web API</strong> (Application Programming Interface) is a service that listens for <strong>HTTP requests</strong> and returns <strong>data</strong> (usually JSON) instead of HTML pages.</p>
+      <p>Web APIs are used as the <strong>backend</strong> for mobile apps, front-end web apps (React, Angular), other services, and any system that needs to exchange data over a network.</p>
+
+      <h3 class="sub-title">REST — The Standard Architecture</h3>
+      <p>Most ASP.NET Core Web APIs follow the <strong>REST</strong> (Representational State Transfer) style. REST uses standard HTTP methods to perform operations on <strong>resources</strong> (data entities like users, products, orders).</p>
+      <div class="callout callout-note">
+        <p><strong>Example:</strong> A <em>Product</em> resource at <code>/api/products</code> can be fetched with GET, created with POST, updated with PUT, and deleted with DELETE — all using the same URL, just different HTTP methods.</p>
+      </div>
+    </section>
+
+    <!-- ── 2. HTTP Basics ── -->
+    <section class="section">
+      <h2 class="sec-title" id="http-basics">HTTP Basics — Request &amp; Response</h2>
+      <p>Every API interaction is an <strong>HTTP Request</strong> sent by the client and an <strong>HTTP Response</strong> returned by the server.</p>
+
+      <div class="flow">
+<span class="flow-note">Client (Browser / Mobile App / Postman)</span>
+         │
+         │  HTTP Request
+         │  ┌─────────────────────────────────────────────────┐
+         │  │ Method:  GET                                     │
+         │  │ URL:     https://api.example.com/api/products/3  │
+         │  │ Headers: Accept: application/json                │
+         │  │ Body:    (empty for GET)                         │
+         │  └─────────────────────────────────────────────────┘
+         ▼
+<span class="flow-box">ASP.NET Core Web API Server</span>
+         │
+         │  HTTP Response
+         │  ┌─────────────────────────────────────────────────┐
+         │  │ Status:  200 OK                                  │
+         │  │ Headers: Content-Type: application/json          │
+         │  │ Body:    {"id":3,"name":"Laptop","price":999.99} │
+         │  └─────────────────────────────────────────────────┘
+         ▼
+<span class="flow-note">Client receives and uses the JSON data</span>
+      </div>
+    </section>
+
+    <!-- ── 3. HTTP Methods ── -->
+    <section class="section">
+      <h2 class="sec-title" id="http-methods">HTTP Methods (Verbs)</h2>
+      <p>Each HTTP method tells the server <em>what action to perform</em> on the resource.</p>
+      <div class="tbl-wrap">
+        <table>
+          <thead><tr><th>Method</th><th>CRUD Action</th><th>Description</th><th>Has Body?</th></tr></thead>
+          <tbody>
+            <tr><td><span class="meth get">GET</span></td><td>Read</td><td>Retrieve a resource or list of resources</td><td>No</td></tr>
+            <tr><td><span class="meth post">POST</span></td><td>Create</td><td>Create a new resource with data in the body</td><td>Yes</td></tr>
+            <tr><td><span class="meth put">PUT</span></td><td>Update (full)</td><td>Replace a resource completely</td><td>Yes</td></tr>
+            <tr><td><span class="meth patch">PATCH</span></td><td>Update (partial)</td><td>Update only specific fields of a resource</td><td>Yes</td></tr>
+            <tr><td><span class="meth del">DELETE</span></td><td>Delete</td><td>Remove a resource</td><td>No</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="callout callout-tip">
+        <p><strong>Idempotent</strong> means calling the same request multiple times gives the same result. GET, PUT, DELETE are idempotent. POST is <em>not</em> — each call creates a new resource.</p>
+      </div>
+    </section>
+
+    <!-- ── 4. Status Codes ── -->
+    <section class="section">
+      <h2 class="sec-title" id="status-codes">HTTP Status Codes</h2>
+      <p>Every response has a <strong>status code</strong> that tells the client what happened.</p>
+
+      <div class="status-grid">
+        <div class="status-card"><div class="status-code s2xx">200</div><div class="status-name">OK</div><div class="status-desc">Request succeeded. Used for GET, PUT responses.</div></div>
+        <div class="status-card"><div class="status-code s2xx">201</div><div class="status-name">Created</div><div class="status-desc">Resource created. Used for POST responses.</div></div>
+        <div class="status-card"><div class="status-code s2xx">204</div><div class="status-name">No Content</div><div class="status-desc">Success but no body returned. Used for DELETE.</div></div>
+        <div class="status-card"><div class="status-code s3xx">301</div><div class="status-name">Moved Permanently</div><div class="status-desc">Resource URL has permanently changed.</div></div>
+        <div class="status-card"><div class="status-code s4xx">400</div><div class="status-name">Bad Request</div><div class="status-desc">Validation failed or malformed request body.</div></div>
+        <div class="status-card"><div class="status-code s4xx">401</div><div class="status-name">Unauthorized</div><div class="status-desc">Not authenticated. Login required.</div></div>
+        <div class="status-card"><div class="status-code s4xx">403</div><div class="status-name">Forbidden</div><div class="status-desc">Authenticated but not allowed access.</div></div>
+        <div class="status-card"><div class="status-code s4xx">404</div><div class="status-name">Not Found</div><div class="status-desc">Resource with that ID does not exist.</div></div>
+        <div class="status-card"><div class="status-code s4xx">409</div><div class="status-name">Conflict</div><div class="status-desc">Resource already exists (e.g., duplicate email).</div></div>
+        <div class="status-card"><div class="status-code s5xx">500</div><div class="status-name">Internal Server Error</div><div class="status-desc">Unhandled exception on the server side.</div></div>
+      </div>
+    </section>
+
+    <!-- ── 5. Project Structure ── -->
+    <section class="section">
+      <h2 class="sec-title" id="project-structure">Project Structure</h2>
+      <p>A typical ASP.NET Core Web API project looks like this:</p>
+      <div class="code-block">
+        <div class="code-header"><div class="code-dots"><div class="code-dot r"></div><div class="code-dot y"></div><div class="code-dot g"></div></div><span class="code-lang">Project Tree</span></div>
+        <pre>MyWebApi/
+│
+├── <span class="at">Controllers/</span>          <span class="cm">← Your API endpoints live here</span>
+│   └── ProductsController.cs
+│
+├── <span class="at">Models/</span>               <span class="cm">← Data models (entities)</span>
+│   └── Product.cs
+│
+├── <span class="at">DTOs/</span>                 <span class="cm">← Data Transfer Objects</span>
+│   ├── CreateProductDto.cs
+│   └── ProductResponseDto.cs
+│
+├── <span class="at">Services/</span>             <span class="cm">← Business logic layer</span>
+│   ├── IProductService.cs
+│   └── ProductService.cs
+│
+├── <span class="at">Data/</span>                 <span class="cm">← Database context (EF Core)</span>
+│   └── AppDbContext.cs
+│
+├── <span class="at">Program.cs</span>            <span class="cm">← App entry point + service registration</span>
+├── <span class="at">appsettings.json</span>      <span class="cm">← Configuration (DB strings, settings)</span>
+└── <span class="at">appsettings.Development.json</span>  <span class="cm">← Dev-only overrides</span></pre>
+      </div>
+    </section>
+
+    <!-- ── 6. Program.cs ── -->
+    <section class="section">
+      <h2 class="sec-title" id="program-cs">Program.cs — App Entry Point</h2>
+      <p><code>Program.cs</code> is where your application <strong>starts</strong>. It does two things: <strong>registers services</strong> (DI container) and <strong>configures the middleware pipeline</strong>.</p>
+
+      <div class="code-block">
+        <div class="code-header"><div class="code-dots"><div class="code-dot r"></div><div class="code-dot y"></div><div class="code-dot g"></div></div><span class="code-lang">Program.cs — ASP.NET Core 6+</span></div>
+        <pre><span class="kw">var</span> builder = WebApplication.<span class="fn">CreateBuilder</span>(args);
+
+<span class="cm">// ── 1. Register Services (Dependency Injection) ──</span>
+builder.Services.<span class="fn">AddControllers</span>();                <span class="cm">// adds MVC controllers</span>
+builder.Services.<span class="fn">AddEndpointsApiExplorer</span>();        <span class="cm">// for Swagger</span>
+builder.Services.<span class="fn">AddSwaggerGen</span>();                  <span class="cm">// Swagger docs</span>
+builder.Services.<span class="fn">AddDbContext</span>&lt;<span class="cl">AppDbContext</span>&gt;(opts =>
+    opts.<span class="fn">UseSqlServer</span>(builder.Configuration.<span class="fn">GetConnectionString</span>(<span class="st">"Default"</span>)));
+builder.Services.<span class="fn">AddScoped</span>&lt;<span class="cl">IProductService</span>, <span class="cl">ProductService</span>&gt;();
+
+<span class="kw">var</span> app = builder.<span class="fn">Build</span>();
+
+<span class="cm">// ── 2. Configure Middleware Pipeline ──</span>
+<span class="kw">if</span> (app.Environment.<span class="fn">IsDevelopment</span>())
+{
+    app.<span class="fn">UseSwagger</span>();
+    app.<span class="fn">UseSwaggerUI</span>();
+}
+
+app.<span class="fn">UseHttpsRedirection</span>();
+app.<span class="fn">UseAuthentication</span>();   <span class="cm">// who are you?</span>
+app.<span class="fn">UseAuthorization</span>();     <span class="cm">// are you allowed?</span>
+app.<span class="fn">MapControllers</span>();       <span class="cm">// map routes to controller actions</span>
+
+app.<span class="fn">Run</span>();</pre>
+      </div>
+      <div class="callout callout-note">
+        <p><strong>Two sections, two phases:</strong> Everything before <code>builder.Build()</code> is <strong>service registration</strong>. Everything after is <strong>pipeline configuration</strong>. Order matters in the pipeline — middleware runs top to bottom on every request.</p>
+      </div>
+    </section>
+
+    <!-- ── 7. appsettings.json ── -->
+    <section class="section">
+      <h2 class="sec-title" id="appsettings">appsettings.json — Configuration</h2>
+      <p>Configuration values (database connection strings, API keys, custom settings) are stored in <code>appsettings.json</code>.</p>
+
+      <div class="code-block">
+        <div class="code-header"><div class="code-dots"><div class="code-dot r"></div><div class="code-dot y"></div><div class="code-dot g"></div></div><span class="code-lang">appsettings.json</span></div>
+        <pre>{
+  <span class="st">"ConnectionStrings"</span>: {
+    <span class="st">"Default"</span>: <span class="st">"Server=.;Database=ShopDB;Trusted_Connection=True;"</span>
+  },
+  <span class="st">"AppSettings"</span>: {
+    <span class="st">"AllowedOrigins"</span>: <span class="st">"http://localhost:3000"</span>,
+    <span class="st">"JwtSecret"</span>: <span class="st">"your-super-secret-key"</span>,
+    <span class="st">"TokenExpiry"</span>: <span class="nm">60</span>
+  },
+  <span class="st">"Logging"</span>: {
+    <span class="st">"LogLevel"</span>: {
+      <span class="st">"Default"</span>: <span class="st">"Information"</span>
+    }
+  }
+}</pre>
+      </div>
+
+      <div class="code-block">
+        <div class="code-header"><div class="code-dots"><div class="code-dot r"></div><div class="code-dot y"></div><div class="code-dot g"></div></div><span class="code-lang">Reading config in C#</span></div>
+        <pre><span class="cm">// In Program.cs or via DI in any class:</span>
+<span class="kw">string</span> connStr = builder.Configuration
+    .<span class="fn">GetConnectionString</span>(<span class="st">"Default"</span>);
+
+<span class="kw">string</span> secret = builder.Configuration[<span class="st">"AppSettings:JwtSecret"</span>];
+<span class="kw">int</span> expiry    = builder.Configuration.<span class="fn">GetValue</span>&lt;<span class="kw">int</span>&gt;(<span class="st">"AppSettings:TokenExpiry"</span>);
+
+<span class="cm">// Or inject IConfiguration into any class constructor:</span>
+<span class="kw">class</span> <span class="cl">MyService</span>
+{
+    <span class="kw">private readonly</span> <span class="cl">IConfiguration</span> _config;
+    <span class="kw">public</span> <span class="fn">MyService</span>(<span class="cl">IConfiguration</span> config) { _config = config; }
+}</pre>
+      </div>
+    </section>
+
+    <!-- ── 8. Controllers ── -->
+    <section class="section">
+      <h2 class="sec-title" id="controllers">Controllers &amp; Actions</h2>
+      <p>A <strong>Controller</strong> is a class that handles incoming HTTP requests and returns responses. Each public method inside a controller that handles a request is called an <strong>Action</strong>.</p>
+
+      <div class="code-block">
+        <div class="code-header"><div class="code-dots"><div class="code-dot r"></div><div class="code-dot y"></div><div class="code-dot g"></div></div><span class="code-lang">ProductsController.cs — Full CRUD</span></div>
+        <pre><span class="kw">using</span> Microsoft.AspNetCore.Mvc;
+
+<span class="at">[ApiController]</span>                       <span class="cm">// enables auto model validation &amp; binding</span>
+<span class="at">[Route("api/[controller]")]</span>           <span class="cm">// → route: /api/products</span>
+<span class="kw">public class</span> <span class="cl">ProductsController</span> : <span class="cl">ControllerBase</span>
+{
+    <span class="kw">private readonly</span> <span class="cl">IProductService</span> _service;
+
+    <span class="cm">// Service is injected via constructor (Dependency Injection)</span>
+    <span class="kw">public</span> <span class="fn">ProductsController</span>(<span class="cl">IProductService</span> service)
+        => _service = service;
+
+    <span class="cm">// GET /api/products</span>
+    <span class="at">[HttpGet]</span>
+    <span class="kw">public</span> <span class="cl">IActionResult</span> <span class="fn">GetAll</span>()
+    {
+        <span class="kw">var</span> products = _service.<span class="fn">GetAll</span>();
+        <span class="kw">return</span> <span class="fn">Ok</span>(products);             <span class="cm">// 200 OK + JSON body</span>
+    }
+
+    <span class="cm">// GET /api/products/5</span>
+    <span class="at">[HttpGet("{id}")]</span>
+    <span class="kw">public</span> <span class="cl">IActionResult</span> <span class="fn">GetById</span>(<span class="kw">int</span> id)
+    {
+        <span class="kw">var</span> product = _service.<span class="fn">GetById</span>(id);
+        <span class="kw">if</span> (product == <span class="kw">null</span>) <span class="kw">return</span> <span class="fn">NotFound</span>();   <span class="cm">// 404</span>
+        <span class="kw">return</span> <span class="fn">Ok</span>(product);
+    }
+
+    <span class="cm">// POST /api/products</span>
+    <span class="at">[HttpPost]</span>
+    <span class="kw">public</span> <span class="cl">IActionResult</span> <span class="fn">Create</span>([<span class="at">FromBody</span>] <span class="cl">CreateProductDto</span> dto)
+    {
+        <span class="kw">var</span> created = _service.<span class="fn">Create</span>(dto);
+        <span class="kw">return</span> <span class="fn">CreatedAtAction</span>(<span class="kw">nameof</span>(<span class="fn">GetById</span>),   <span class="cm">// 201 Created</span>
+            <span class="kw">new</span> { id = created.Id }, created);
+    }
+
+    <span class="cm">// PUT /api/products/5</span>
+    <span class="at">[HttpPut("{id}")]</span>
+    <span class="kw">public</span> <span class="cl">IActionResult</span> <span class="fn">Update</span>(<span class="kw">int</span> id, [<span class="at">FromBody</span>] <span class="cl">UpdateProductDto</span> dto)
+    {
+        <span class="kw">var</span> success = _service.<span class="fn">Update</span>(id, dto);
+        <span class="kw">if</span> (!success) <span class="kw">return</span> <span class="fn">NotFound</span>();
+        <span class="kw">return</span> <span class="fn">NoContent</span>();   <span class="cm">// 204 No Content</span>
+    }
+
+    <span class="cm">// DELETE /api/products/5</span>
+    <span class="at">[HttpDelete("{id}")]</span>
+    <span class="kw">public</span> <span class="cl">IActionResult</span> <span class="fn">Delete</span>(<span class="kw">int</span> id)
+    {
+        <span class="kw">var</span> success = _service.<span class="fn">Delete</span>(id);
+        <span class="kw">if</span> (!success) <span class="kw">return</span> <span class="fn">NotFound</span>();
+        <span class="kw">return</span> <span class="fn">NoContent</span>();   <span class="cm">// 204 No Content</span>
+    }
+}</pre>
+      </div>
+
+      <div class="callout callout-tip">
+        <p><strong>ControllerBase vs Controller:</strong> Use <code>ControllerBase</code> for Web API (no View support needed). Use <code>Controller</code> (inherits ControllerBase) only when returning MVC Views like <code>View()</code>.</p>
+      </div>
+    </section>
+
+    <!-- ── 9. Routing ── -->
+    <section class="section">
+      <h2 class="sec-title" id="routing">Routing</h2>
+      <p>Routing maps an incoming HTTP request URL to a specific controller action. ASP.NET Core supports <strong>Attribute Routing</strong> (used in Web APIs).</p>
+
+      <h3 class="sub-title">Route Tokens</h3>
+      <div class="tbl-wrap">
+        <table>
+          <thead><tr><th>Token</th><th>Replaced by</th><th>Example</th></tr></thead>
+          <tbody>
+            <tr><td><code>[controller]</code></td><td>Controller class name (minus "Controller")</td><td><code>ProductsController</code> → <code>products</code></td></tr>
+            <tr><td><code>[action]</code></td><td>Method name</td><td><code>GetAll</code> → <code>getall</code></td></tr>
+            <tr><td><code>{id}</code></td><td>Route parameter</td><td><code>/api/products/5</code> → <code>id=5</code></td></tr>
+            <tr><td><code>{id?}</code></td><td>Optional route parameter</td><td><code>/api/products</code> or <code>/api/products/5</code></td></tr>
+            <tr><td><code>{id:int}</code></td><td>Constrained parameter (integers only)</td><td><code>/api/products/abc</code> → 404</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="code-block">
+        <div class="code-header"><div class="code-dots"><div class="code-dot r"></div><div class="code-dot y"></div><div class="code-dot g"></div></div><span class="code-lang">Routing Examples</span></div>
+        <pre><span class="at">[Route("api/[controller]")]</span>         <span class="cm">// /api/products</span>
+<span class="at">[Route("api/v1/products")]</span>          <span class="cm">// explicit route</span>
+<span class="at">[Route("api/[controller]/[action]")]</span> <span class="cm">// /api/products/getall</span>
+
+<span class="at">[HttpGet("{id:int}")]</span>               <span class="cm">// only matches integers</span>
+<span class="at">[HttpGet("{name:alpha}")]</span>           <span class="cm">// only matches letters</span>
+<span class="at">[HttpGet("{id:int:min(1)}")]</span>        <span class="cm">// integer, must be ≥ 1</span>
+
+<span class="cm">// Multiple routes on one action</span>
+<span class="at">[HttpGet("{id}")]</span>
+<span class="at">[HttpGet("details/{id}")]</span>
+<span class="kw">public</span> <span class="cl">IActionResult</span> <span class="fn">GetById</span>(<span class="kw">int</span> id) { ... }</pre>
+      </div>
+
+      <h3 class="sub-title">Query Strings</h3>
+      <div class="code-block">
+        <div class="code-header"><div class="code-dots"><div class="code-dot r"></div><div class="code-dot y"></div><div class="code-dot g"></div></div><span class="code-lang">Query string parameters</span></div>
+        <pre><span class="cm">// GET /api/products?page=2&pageSize=10&search=laptop</span>
+<span class="at">[HttpGet]</span>
+<span class="kw">public</span> <span class="cl">IActionResult</span> <span class="fn">GetAll</span>(
+    [<span class="at">FromQuery</span>] <span class="kw">int</span> page = <span class="nm">1</span>,
+    [<span class="at">FromQuery</span>] <span class="kw">int</span> pageSize = <span class="nm">10</span>,
+    [<span class="at">FromQuery</span>] <span class="kw">string</span>? search = <span class="kw">null</span>)
+{
+    <span class="kw">var</span> results = _service.<span class="fn">GetPaged</span>(page, pageSize, search);
+    <span class="kw">return</span> <span class="fn">Ok</span>(results);
+}</pre>
+      </div>
+    </section>
+
+    <!-- ── 10. IActionResult ── -->
+    <section class="section">
+      <h2 class="sec-title" id="action-results">IActionResult — Returning Responses</h2>
+      <p><code>IActionResult</code> is the return type for controller actions. It lets you return any HTTP response — with a status code and optional body.</p>
+
+      <div class="tbl-wrap">
+        <table>
+          <thead><tr><th>Helper Method</th><th>Status Code</th><th>When to use</th></tr></thead>
+          <tbody>
+            <tr><td><code>Ok(data)</code></td><td><span class="meth get">200</span></td><td>Successful GET, PUT — return data</td></tr>
+            <tr><td><code>Created(url, data)</code></td><td><span class="meth post">201</span></td><td>Resource created via POST</td></tr>
+            <tr><td><code>CreatedAtAction(...)</code></td><td><span class="meth post">201</span></td><td>POST — return 201 + Location header pointing to GET</td></tr>
+            <tr><td><code>NoContent()</code></td><td>204</td><td>PUT / DELETE success, no data to return</td></tr>
+            <tr><td><code>BadRequest(obj)</code></td><td><span class="meth del">400</span></td><td>Validation failed, bad input</td></tr>
+            <tr><td><code>Unauthorized()</code></td><td>401</td><td>Not logged in</td></tr>
+            <tr><td><code>Forbid()</code></td><td>403</td><td>Logged in but no permission</td></tr>
+            <tr><td><code>NotFound()</code></td><td><span class="meth del">404</span></td><td>Resource doesn't exist</td></tr>
+            <tr><td><code>Conflict()</code></td><td>409</td><td>Resource already exists</td></tr>
+            <tr><td><code>StatusCode(code, data)</code></td><td>Any</td><td>Custom status code</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3 class="sub-title">ActionResult&lt;T&gt; — Typed Return (Preferred)</h3>
+      <div class="code-block">
+        <div class="code-header"><div class="code-dots"><div class="code-dot r"></div><div class="code-dot y"></div><div class="code-dot g"></div></div><span class="code-lang">Strongly-typed action result</span></div>
+        <pre><span class="cm">// ActionResult&lt;T&gt; gives you both type safety and HTTP flexibility</span>
+<span class="at">[HttpGet("{id}")]</span>
+<span class="kw">public</span> <span class="cl">ActionResult</span>&lt;<span class="cl">ProductDto</span>&gt; <span class="fn">GetById</span>(<span class="kw">int</span> id)
+{
+    <span class="kw">var</span> product = _service.<span class="fn">GetById</span>(id);
+
+    <span class="kw">if</span> (product == <span class="kw">null</span>)
+        <span class="kw">return</span> <span class="fn">NotFound</span>(
+            <span class="kw">new</span> { Message = $<span class="st">"Product {id} not found"</span> });
+
+    <span class="kw">return</span> product;      <span class="cm">// implicit 200 OK + serialized ProductDto</span>
+}</pre>
+      </div>
+    </section>
+
+    <!-- ── 11. Model Binding ── -->
+    <section class="section">
+      <h2 class="sec-title" id="model-binding">Model Binding</h2>
+      <p><strong>Model Binding</strong> is the automatic process by which ASP.NET Core extracts data from an HTTP request and maps it to action method parameters or model properties.</p>
+
+      <div class="tbl-wrap">
+        <table>
+          <thead><tr><th>Attribute</th><th>Reads from</th><th>Example</th></tr></thead>
+          <tbody>
+            <tr><td><code>[FromRoute]</code></td><td>URL segment</td><td><code>GET /api/products/5</code> → <code>{id}</code></td></tr>
+            <tr><td><code>[FromQuery]</code></td><td>Query string</td><td><code>?page=2&size=10</code></td></tr>
+            <tr><td><code>[FromBody]</code></td><td>Request body (JSON)</td><td>POST / PUT body</td></tr>
+            <tr><td><code>[FromHeader]</code></td><td>HTTP header</td><td><code>Authorization: Bearer ...</code></td></tr>
+            <tr><td><code>[FromForm]</code></td><td>Form data</td><td>File uploads, HTML forms</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="code-block">
+        <div class="code-header"><div class="code-dots"><div class="code-dot r"></div><div class="code-dot y"></div><div class="code-dot g"></div></div><span class="code-lang">Binding from different sources</span></div>
+        <pre><span class="cm">// GET /api/orders/5?includeItems=true  +  Header: X-User-Id: 99</span>
+<span class="at">[HttpGet("{orderId}")]</span>
+<span class="kw">public</span> <span class="cl">IActionResult</span> <span class="fn">GetOrder</span>(
+    [<span class="at">FromRoute</span>]  <span class="kw">int</span> orderId,
+    [<span class="at">FromQuery</span>]  <span class="kw">bool</span> includeItems,
+    [<span class="at">FromHeader(Name = "X-User-Id")</span>] <span class="kw">int</span> userId)
+{
+    ...
+}
+
+<span class="cm">// POST /api/products  — body: { "name": "Laptop", "price": 999 }</span>
+<span class="at">[HttpPost]</span>
+<span class="kw">public</span> <span class="cl">IActionResult</span> <span class="fn">Create</span>([<span class="at">FromBody</span>] <span class="cl">CreateProductDto</span> dto)
+{
+    ...
+}</pre>
+      </div>
+    </section>
+
+    <!-- ── 12. Models & DTOs ── -->
+    <section class="section">
+      <h2 class="sec-title" id="models">Models &amp; DTOs</h2>
+
+      <h3 class="sub-title">Model (Entity)</h3>
+      <p>A <strong>Model</strong> represents your database entity — it maps directly to a database table (when using EF Core).</p>
+
+      <div class="code-block">
+        <div class="code-header"><div class="code-dots"><div class="code-dot r"></div><div class="code-dot y"></div><div class="code-dot g"></div></div><span class="code-lang">Models/Product.cs</span></div>
+        <pre><span class="kw">public class</span> <span class="cl">Product</span>
+{
+    <span class="kw">public int</span>     Id          { <span class="kw">get</span>; <span class="kw">set</span>; }
+    <span class="kw">public string</span>  Name        { <span class="kw">get</span>; <span class="kw">set</span>; } = <span class="kw">string</span>.Empty;
+    <span class="kw">public decimal</span> Price       { <span class="kw">get</span>; <span class="kw">set</span>; }
+    <span class="kw">public int</span>     Stock       { <span class="kw">get</span>; <span class="kw">set</span>; }
+    <span class="kw">public bool</span>    IsAvailable { <span class="kw">get</span>; <span class="kw">set</span>; }
+    <span class="kw">public DateTime</span> CreatedAt  { <span class="kw">get</span>; <span class="kw">set</span>; }
+}</pre>
+      </div>
+
+      <h3 class="sub-title">DTO (Data Transfer Object)</h3>
+      <p>A <strong>DTO</strong> is a trimmed version of a model, used to control exactly what data enters and exits your API. Never expose your raw entity directly — use DTOs.</p>
+
+      <div class="code-block">
+        <div class="code-header"><div class="code-dots"><div class="code-dot r"></div><div class="code-dot y"></div><div class="code-dot g"></div></div><span class="code-lang">DTOs/ProductDto.cs</span></div>
+        <pre><span class="cm">// What the API accepts when CREATING a product</span>
+<span class="kw">public class</span> <span class="cl">CreateProductDto</span>
+{
+    <span class="at">[Required]</span>
+    <span class="at">[MaxLength(100)]</span>
+    <span class="kw">public string</span>  Name  { <span class="kw">get</span>; <span class="kw">set</span>; } = <span class="kw">string</span>.Empty;
+
+    <span class="at">[Range(0.01, 99999.99)]</span>
+    <span class="kw">public decimal</span> Price { <span class="kw">get</span>; <span class="kw">set</span>; }
+
+    <span class="at">[Range(0, int.MaxValue)]</span>
+    <span class="kw">public int</span>     Stock { <span class="kw">get</span>; <span class="kw">set</span>; }
+}
+
+<span class="cm">// What the API returns when READING a product</span>
+<span class="kw">public class</span> <span class="cl">ProductResponseDto</span>
+{
+    <span class="kw">public int</span>     Id    { <span class="kw">get</span>; <span class="kw">set</span>; }
+    <span class="kw">public string</span>  Name  { <span class="kw">get</span>; <span class="kw">set</span>; } = <span class="kw">string</span>.Empty;
+    <span class="kw">public decimal</span> Price { <span class="kw">get</span>; <span class="kw">set</span>; }
+    <span class="cm">// Notice: no Stock, no internal fields exposed</span>
+}</pre>
+      </div>
+
+      <div class="callout callout-warn">
+        <p><strong>Why DTOs?</strong> They protect against over-posting attacks, hide internal fields, allow the API contract and database schema to evolve independently, and simplify validation.</p>
+      </div>
+    </section>
+
+    <!-- ── 13. Data Annotations ── -->
+    <section class="section">
+      <h2 class="sec-title" id="validation">Data Annotations &amp; Validation</h2>
+      <p>Data annotations are attributes placed on DTO properties to declare validation rules. With <code>[ApiController]</code>, validation runs automatically and returns <strong>400 Bad Request</strong> if any rule fails.</p>
+
+      <div class="tbl-wrap">
+        <table>
+          <thead><tr><th>Annotation</th><th>Description</th></tr></thead>
+          <tbody>
+            <tr><td><code>[Required]</code></td><td>Field must be present and non-null</td></tr>
+            <tr><td><code>[MaxLength(n)]</code></td><td>String length ≤ n</td></tr>
+            <tr><td><code>[MinLength(n)]</code></td><td>String length ≥ n</td></tr>
+            <tr><td><code>[StringLength(max, MinimumLength=min)]</code></td><td>String length between min and max</td></tr>
+            <tr><td><code>[Range(min, max)]</code></td><td>Numeric value within range</td></tr>
+            <tr><td><code>[EmailAddress]</code></td><td>Valid email format</td></tr>
+            <tr><td><code>[Url]</code></td><td>Valid URL format</td></tr>
+            <tr><td><code>[RegularExpression("pattern")]</code></td><td>Must match regex pattern</td></tr>
+            <tr><td><code>[Compare("OtherProp")]</code></td><td>Must equal value of another property (e.g., confirm password)</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="code-block">
+        <div class="code-header"><div class="code-dots"><div class="code-dot r"></div><div class="code-dot y"></div><div class="code-dot g"></div></div><span class="code-lang">Validation example</span></div>
+        <pre><span class="kw">public class</span> <span class="cl">RegisterDto</span>
+{
+    <span class="at">[Required(ErrorMessage = "Name is required")]</span>
+    <span class="at">[StringLength(50, MinimumLength = 2)]</span>
+    <span class="kw">public string</span> Name { <span class="kw">get</span>; <span class="kw">set</span>; } = <span class="st">""</span>;
+
+    <span class="at">[Required]</span>
+    <span class="at">[EmailAddress(ErrorMessage = "Invalid email format")]</span>
+    <span class="kw">public string</span> Email { <span class="kw">get</span>; <span class="kw">set</span>; } = <span class="st">""</span>;
+
+    <span class="at">[Required]</span>
+    <span class="at">[MinLength(8, ErrorMessage = "Password min 8 characters")]</span>
+    <span class="kw">public string</span> Password { <span class="kw">get</span>; <span class="kw">set</span>; } = <span class="st">""</span>;
+
+    <span class="at">[Compare("Password", ErrorMessage = "Passwords do not match")]</span>
+    <span class="kw">public string</span> ConfirmPassword { <span class="kw">get</span>; <span class="kw">set</span>; } = <span class="st">""</span>;
+}
+
+<span class="cm">// Controller action — [ApiController] handles validation automatically</span>
+<span class="at">[HttpPost("register")]</span>
+<span class="kw">public</span> <span class="cl">IActionResult</span> <span class="fn">Register</span>([<span class="at">FromBody</span>] <span class="cl">RegisterDto</span> dto)
+{
+    <span class="cm">// If any annotation fails → automatic 400 BadRequest with error details</span>
+    <span class="cm">// If you're NOT using [ApiController], check manually:</span>
+    <span class="cm">// if (!ModelState.IsValid) return BadRequest(ModelState);</span>
+    ...
+}</pre>
+      </div>
+    </section>
+
+    <!-- ── 14. Middleware ── -->
+    <section class="section">
+      <h2 class="sec-title" id="middleware">Middleware Pipeline</h2>
+      <p><strong>Middleware</strong> is software assembled into the request pipeline that processes every HTTP request and response. Each middleware component either handles the request or passes it to the next component in the chain.</p>
+
+      <div class="flow">
+<span class="flow-note">Incoming HTTP Request</span>
+          │
+          ▼
+┌──────────────────────────────┐
+│  <span class="flow-arrow">UseExceptionHandler</span>          │  ← catches unhandled exceptions
+└──────────────────┬───────────┘
+                   ▼
+┌──────────────────────────────┐
+│  <span class="flow-arrow">UseHttpsRedirection</span>          │  ← http → https
+└──────────────────┬───────────┘
+                   ▼
+┌──────────────────────────────┐
+│  <span class="flow-arrow">UseStaticFiles</span>               │  ← serves wwwroot files
+└──────────────────┬───────────┘
+                   ▼
+┌──────────────────────────────┐
+│  <span class="flow-arrow">UseCors</span>                      │  ← Cross-Origin access
+└──────────────────┬───────────┘
+                   ▼
+┌──────────────────────────────┐
+│  <span class="flow-arrow">UseAuthentication</span>            │  ← who are you?
+└──────────────────┬───────────┘
+                   ▼
+┌──────────────────────────────┐
+│  <span class="flow-arrow">UseAuthorization</span>             │  ← are you allowed?
+└──────────────────┬───────────┘
+                   ▼
+┌──────────────────────────────┐
+│  <span class="flow-box">MapControllers</span>               │  ← routes request to controller action
+└──────────────────┬───────────┘
+                   ▼
+          <span class="flow-note">Controller Action executes</span>
+                   │
+          <span class="flow-note">Response travels back UP through the same pipeline</span>
+      </div>
+
+      <h3 class="sub-title">Custom Middleware</h3>
+      <div class="code-block">
+        <div class="code-header"><div class="code-dots"><div class="code-dot r"></div><div class="code-dot y"></div><div class="code-dot g"></div></div><span class="code-lang">Custom logging middleware</span></div>
+        <pre><span class="kw">public class</span> <span class="cl">RequestLoggingMiddleware</span>
+{
+    <span class="kw">private readonly</span> <span class="cl">RequestDelegate</span> _next;
+
+    <span class="kw">public</span> <span class="fn">RequestLoggingMiddleware</span>(<span class="cl">RequestDelegate</span> next) => _next = next;
+
+    <span class="kw">public async</span> <span class="cl">Task</span> <span class="fn">InvokeAsync</span>(<span class="cl">HttpContext</span> context)
+    {
+        Console.<span class="fn">WriteLine</span>($<span class="st">"→ {context.Request.Method} {context.Request.Path}"</span>);
+
+        <span class="kw">await</span> _next(context);    <span class="cm">// pass to next middleware</span>
+
+        Console.<span class="fn">WriteLine</span>($<span class="st">"← {context.Response.StatusCode}"</span>);
+    }
+}
+
+<span class="cm">// Register in Program.cs:</span>
+app.<span class="fn">UseMiddleware</span>&lt;<span class="cl">RequestLoggingMiddleware</span>&gt;();</pre>
+      </div>
+    </section>
+
+    <!-- ── 15. Dependency Injection ── -->
+    <section class="section">
+      <h2 class="sec-title" id="di">Dependency Injection (DI)</h2>
+      <p><strong>Dependency Injection</strong> is a design pattern where a class receives its dependencies from the outside (injected by the framework) rather than creating them itself. ASP.NET Core has DI built in.</p>
+
+      <div class="code-block">
+        <div class="code-header"><div class="code-dots"><div class="code-dot r"></div><div class="code-dot y"></div><div class="code-dot g"></div></div><span class="code-lang">DI in action — 3 simple steps</span></div>
+        <pre><span class="cm">// Step 1: Define interface</span>
+<span class="kw">public interface</span> <span class="cl">IEmailService</span>
+{
+    <span class="kw">void</span> <span class="fn">SendEmail</span>(<span class="kw">string</span> to, <span class="kw">string</span> subject, <span class="kw">string</span> body);
+}
+
+<span class="cm">// Step 2: Implement it</span>
+<span class="kw">public class</span> <span class="cl">SmtpEmailService</span> : <span class="cl">IEmailService</span>
+{
+    <span class="kw">public void</span> <span class="fn">SendEmail</span>(<span class="kw">string</span> to, <span class="kw">string</span> subject, <span class="kw">string</span> body)
+        => Console.<span class="fn">WriteLine</span>($<span class="st">"Sending email to {to}: {subject}"</span>);
+}
+
+<span class="cm">// Step 3: Register in Program.cs</span>
+builder.Services.<span class="fn">AddScoped</span>&lt;<span class="cl">IEmailService</span>, <span class="cl">SmtpEmailService</span>&gt;();
+
+<span class="cm">// Now inject anywhere via constructor</span>
+<span class="kw">public class</span> <span class="cl">UserController</span> : <span class="cl">ControllerBase</span>
+{
+    <span class="kw">private readonly</span> <span class="cl">IEmailService</span> _email;
+
+    <span class="kw">public</span> <span class="fn">UserController</span>(<span class="cl">IEmailService</span> email) => _email = email;
+
+    <span class="at">[HttpPost("register")]</span>
+    <span class="kw">public</span> <span class="cl">IActionResult</span> <span class="fn">Register</span>([<span class="at">FromBody</span>] <span class="cl">RegisterDto</span> dto)
+    {
+        _email.<span class="fn">SendEmail</span>(dto.Email, <span class="st">"Welcome!"</span>, <span class="st">"Thanks for registering."</span>);
+        <span class="kw">return</span> <span class="fn">Ok</span>();
+    }
+}</pre>
+      </div>
+    </section>
+
+    <!-- ── 16. Service Lifetimes ── -->
+    <section class="section">
+      <h2 class="sec-title" id="services">Service Lifetimes</h2>
+      <p>When registering services, you choose a <strong>lifetime</strong> that controls how long each instance lives.</p>
+
+      <div class="tbl-wrap">
+        <table>
+          <thead><tr><th>Lifetime</th><th>Registration</th><th>Instance Created</th><th>Use When</th></tr></thead>
+          <tbody>
+            <tr><td><strong>Transient</strong></td><td><code>AddTransient&lt;I, C&gt;()</code></td><td>Every time it's requested (new instance per injection)</td><td>Lightweight, stateless services</td></tr>
+            <tr><td><strong>Scoped</strong></td><td><code>AddScoped&lt;I, C&gt;()</code></td><td>Once per HTTP request (shared within same request)</td><td>Database context, unit of work</td></tr>
+            <tr><td><strong>Singleton</strong></td><td><code>AddSingleton&lt;I, C&gt;()</code></td><td>Once for the entire app lifetime (shared globally)</td><td>Caches, configuration, shared state</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="callout callout-warn">
+        <p><strong>⚠ Captive dependency:</strong> Never inject a Scoped or Transient service into a Singleton — the short-lived service becomes "captured" and lives as long as the Singleton, which causes bugs. EF Core's <code>DbContext</code> is Scoped — never inject it into a Singleton.</p>
+      </div>
+    </section>
+
+    <!-- ── 17. EF Core ── -->
+    <section class="section">
+      <h2 class="sec-title" id="efcore">Entity Framework Core (EF Core)</h2>
+      <p><strong>EF Core</strong> is Microsoft's Object-Relational Mapper (ORM). It lets you work with a database using C# objects — no raw SQL needed (unless you want it).</p>
+
+      <h3 class="sub-title">DbContext — The Database Bridge</h3>
+      <div class="code-block">
+        <div class="code-header"><div class="code-dots"><div class="code-dot r"></div><div class="code-dot y"></div><div class="code-dot g"></div></div><span class="code-lang">Data/AppDbContext.cs</span></div>
+        <pre><span class="kw">using</span> Microsoft.EntityFrameworkCore;
+
+<span class="kw">public class</span> <span class="cl">AppDbContext</span> : <span class="cl">DbContext</span>
+{
+    <span class="kw">public</span> <span class="fn">AppDbContext</span>(<span class="cl">DbContextOptions</span>&lt;<span class="cl">AppDbContext</span>&gt; options)
+        : <span class="kw">base</span>(options) { }
+
+    <span class="cm">// Each DbSet maps to a table</span>
+    <span class="kw">public</span> <span class="cl">DbSet</span>&lt;<span class="cl">Product</span>&gt;  Products  { <span class="kw">get</span>; <span class="kw">set</span>; }
+    <span class="kw">public</span> <span class="cl">DbSet</span>&lt;<span class="cl">Category</span>&gt; Categories { <span class="kw">get</span>; <span class="kw">set</span>; }
+    <span class="kw">public</span> <span class="cl">DbSet</span>&lt;<span class="cl">Order</span>&gt;    Orders    { <span class="kw">get</span>; <span class="kw">set</span>; }
+}</pre>
+      </div>
+
+      <h3 class="sub-title">CRUD with EF Core</h3>
+      <div class="code-block">
+        <div class="code-header"><div class="code-dots"><div class="code-dot r"></div><div class="code-dot y"></div><div class="code-dot g"></div></div><span class="code-lang">Full CRUD operations</span></div>
+        <pre><span class="kw">public class</span> <span class="cl">ProductService</span> : <span class="cl">IProductService</span>
+{
+    <span class="kw">private readonly</span> <span class="cl">AppDbContext</span> _db;
+    <span class="kw">public</span> <span class="fn">ProductService</span>(<span class="cl">AppDbContext</span> db) => _db = db;
+
+    <span class="cm">// READ all</span>
+    <span class="kw">public async</span> <span class="cl">Task</span>&lt;<span class="cl">List</span>&lt;<span class="cl">Product</span>&gt;&gt; <span class="fn">GetAllAsync</span>()
+        => <span class="kw">await</span> _db.Products.<span class="fn">ToListAsync</span>();
+
+    <span class="cm">// READ one</span>
+    <span class="kw">public async</span> <span class="cl">Task</span>&lt;<span class="cl">Product</span>?&gt; <span class="fn">GetByIdAsync</span>(<span class="kw">int</span> id)
+        => <span class="kw">await</span> _db.Products.<span class="fn">FindAsync</span>(id);
+
+    <span class="cm">// CREATE</span>
+    <span class="kw">public async</span> <span class="cl">Task</span>&lt;<span class="cl">Product</span>&gt; <span class="fn">CreateAsync</span>(<span class="cl">CreateProductDto</span> dto)
+    {
+        <span class="kw">var</span> product = <span class="kw">new</span> <span class="cl">Product</span> { Name = dto.Name, Price = dto.Price };
+        _db.Products.<span class="fn">Add</span>(product);
+        <span class="kw">await</span> _db.<span class="fn">SaveChangesAsync</span>();
+        <span class="kw">return</span> product;
+    }
+
+    <span class="cm">// UPDATE</span>
+    <span class="kw">public async</span> <span class="cl">Task</span>&lt;<span class="kw">bool</span>&gt; <span class="fn">UpdateAsync</span>(<span class="kw">int</span> id, <span class="cl">UpdateProductDto</span> dto)
+    {
+        <span class="kw">var</span> product = <span class="kw">await</span> _db.Products.<span class="fn">FindAsync</span>(id);
+        <span class="kw">if</span> (product == <span class="kw">null</span>) <span class="kw">return false</span>;
+        product.Name  = dto.Name;
+        product.Price = dto.Price;
+        <span class="kw">await</span> _db.<span class="fn">SaveChangesAsync</span>();
+        <span class="kw">return true</span>;
+    }
+
+    <span class="cm">// DELETE</span>
+    <span class="kw">public async</span> <span class="cl">Task</span>&lt;<span class="kw">bool</span>&gt; <span class="fn">DeleteAsync</span>(<span class="kw">int</span> id)
+    {
+        <span class="kw">var</span> product = <span class="kw">await</span> _db.Products.<span class="fn">FindAsync</span>(id);
+        <span class="kw">if</span> (product == <span class="kw">null</span>) <span class="kw">return false</span>;
+        _db.Products.<span class="fn">Remove</span>(product);
+        <span class="kw">await</span> _db.<span class="fn">SaveChangesAsync</span>();
+        <span class="kw">return true</span>;
+    }
+}</pre>
+      </div>
+
+      <h3 class="sub-title">Migrations — Code First</h3>
+      <div class="code-block">
+        <div class="code-header"><div class="code-dots"><div class="code-dot r"></div><div class="code-dot y"></div><div class="code-dot g"></div></div><span class="code-lang">CLI Commands</span></div>
+        <pre><span class="cm"># Create a migration (generates SQL from your model changes)</span>
+dotnet ef migrations add InitialCreate
+
+<span class="cm"># Apply migration to database (creates/alters tables)</span>
+dotnet ef database update
+
+<span class="cm"># Revert last migration</span>
+dotnet ef migrations remove
+
+<span class="cm"># List all migrations</span>
+dotnet ef migrations list</pre>
+      </div>
+    </section>
+
+    <!-- ── 18. Swagger ── -->
+    <section class="section">
+      <h2 class="sec-title" id="swagger">Swagger / OpenAPI</h2>
+      <p><strong>Swagger</strong> (OpenAPI) automatically generates interactive API documentation from your controllers. It provides a browser UI where you can see all your endpoints and test them — no Postman needed.</p>
+
+      <div class="code-block">
+        <div class="code-header"><div class="code-dots"><div class="code-dot r"></div><div class="code-dot y"></div><div class="code-dot g"></div></div><span class="code-lang">Program.cs — Swagger setup</span></div>
+        <pre>builder.Services.<span class="fn">AddEndpointsApiExplorer</span>();
+builder.Services.<span class="fn">AddSwaggerGen</span>(c =>
+{
+    c.<span class="fn">SwaggerDoc</span>(<span class="st">"v1"</span>, <span class="kw">new</span> OpenApiInfo
+    {
+        Title   = <span class="st">"My API"</span>,
+        Version = <span class="st">"v1"</span>,
+        Description = <span class="st">"ASP.NET Core Web API"</span>
+    });
+
+    <span class="cm">// Include XML comments for endpoint descriptions</span>
+    <span class="kw">var</span> xmlFile = $<span class="st">"{Assembly.GetExecutingAssembly().GetName().Name}.xml"</span>;
+    <span class="kw">var</span> xmlPath = Path.<span class="fn">Combine</span>(AppContext.BaseDirectory, xmlFile);
+    c.<span class="fn">IncludeXmlComments</span>(xmlPath);
+});
+
+<span class="cm">// In pipeline:</span>
+<span class="kw">if</span> (app.Environment.<span class="fn">IsDevelopment</span>())
+{
+    app.<span class="fn">UseSwagger</span>();
+    app.<span class="fn">UseSwaggerUI</span>(c => c.<span class="fn">SwaggerEndpoint</span>(<span class="st">"/swagger/v1/swagger.json"</span>, <span class="st">"v1"</span>));
+}
+<span class="cm">// Visit: https://localhost:PORT/swagger</span></pre>
+      </div>
+
+      <div class="code-block">
+        <div class="code-header"><div class="code-dots"><div class="code-dot r"></div><div class="code-dot y"></div><div class="code-dot g"></div></div><span class="code-lang">XML doc comments for Swagger</span></div>
+        <pre><span class="cm">/// &lt;summary&gt;Get a product by its ID&lt;/summary&gt;</span>
+<span class="cm">/// &lt;param name="id"&gt;The product ID&lt;/param&gt;</span>
+<span class="cm">/// &lt;response code="200"&gt;Product found&lt;/response&gt;</span>
+<span class="cm">/// &lt;response code="404"&gt;Product not found&lt;/response&gt;</span>
+<span class="at">[HttpGet("{id}")]</span>
+<span class="at">[ProducesResponseType(typeof(ProductResponseDto), 200)]</span>
+<span class="at">[ProducesResponseType(404)]</span>
+<span class="kw">public</span> <span class="cl">IActionResult</span> <span class="fn">GetById</span>(<span class="kw">int</span> id) { ... }</pre>
+      </div>
+    </section>
+
+    <!-- ── 19. CORS ── -->
+    <section class="section">
+      <h2 class="sec-title" id="cors">CORS — Cross-Origin Resource Sharing</h2>
+      <p><strong>CORS</strong> is a browser security mechanism that blocks a web page from making requests to a different domain than the one that served it. You need to configure CORS in your API to allow your front-end (e.g., React on <code>localhost:3000</code>) to call your API.</p>
+
+      <div class="code-block">
+        <div class="code-header"><div class="code-dots"><div class="code-dot r"></div><div class="code-dot y"></div><div class="code-dot g"></div></div><span class="code-lang">CORS Configuration in Program.cs</span></div>
+        <pre><span class="cm">// Register CORS policy</span>
+builder.Services.<span class="fn">AddCors</span>(options =>
+{
+    options.<span class="fn">AddPolicy</span>(<span class="st">"AllowFrontend"</span>, policy =>
+    {
+        policy.<span class="fn">WithOrigins</span>(<span class="st">"http://localhost:3000"</span>, <span class="st">"https://myapp.com"</span>)
+              .<span class="fn">AllowAnyHeader</span>()
+              .<span class="fn">AllowAnyMethod</span>()
+              .<span class="fn">AllowCredentials</span>();
+    });
+
+    <span class="cm">// For development — allow everything (NOT for production)</span>
+    options.<span class="fn">AddPolicy</span>(<span class="st">"AllowAll"</span>, policy =>
+        policy.<span class="fn">AllowAnyOrigin</span>().<span class="fn">AllowAnyHeader</span>().<span class="fn">AllowAnyMethod</span>());
+});
+
+<span class="cm">// Apply in pipeline (must come before UseAuthorization)</span>
+app.<span class="fn">UseCors</span>(<span class="st">"AllowFrontend"</span>);</pre>
+      </div>
+    </section>
+
+    <!-- ── 20. Filters ── -->
+    <section class="section">
+      <h2 class="sec-title" id="filters">Action Filters</h2>
+      <p><strong>Action Filters</strong> let you run code <em>before</em> or <em>after</em> a controller action executes — without touching the action itself. Perfect for cross-cutting concerns like logging, validation, and timing.</p>
+
+      <div class="tbl-wrap">
+        <table>
+          <thead><tr><th>Filter Type</th><th>Runs When</th></tr></thead>
+          <tbody>
+            <tr><td><code>IActionFilter</code></td><td>Before &amp; after action method executes</td></tr>
+            <tr><td><code>IResultFilter</code></td><td>Before &amp; after result (IActionResult) executes</td></tr>
+            <tr><td><code>IExceptionFilter</code></td><td>When an unhandled exception occurs</td></tr>
+            <tr><td><code>IAuthorizationFilter</code></td><td>Before anything else — authorization check</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="code-block">
+        <div class="code-header"><div class="code-dots"><div class="code-dot r"></div><div class="code-dot y"></div><div class="code-dot g"></div></div><span class="code-lang">Custom exception filter</span></div>
+        <pre><span class="kw">public class</span> <span class="cl">GlobalExceptionFilter</span> : <span class="cl">IExceptionFilter</span>
+{
+    <span class="kw">public void</span> <span class="fn">OnException</span>(<span class="cl">ExceptionContext</span> context)
+    {
+        context.Result = <span class="kw">new</span> <span class="cl">ObjectResult</span>(<span class="kw">new</span>
+        {
+            Error   = context.Exception.Message,
+            Type    = context.Exception.<span class="fn">GetType</span>().Name,
+            Status  = <span class="nm">500</span>
+        }) { StatusCode = <span class="nm">500</span> };
+
+        context.ExceptionHandled = <span class="kw">true</span>;
+    }
+}
+
+<span class="cm">// Register globally in Program.cs</span>
+builder.Services.<span class="fn">AddControllers</span>(options =>
+    options.Filters.<span class="fn">Add</span>&lt;<span class="cl">GlobalExceptionFilter</span>&gt;());
+
+<span class="cm">// Or use on specific controller/action</span>
+<span class="at">[ServiceFilter(typeof(GlobalExceptionFilter))]</span>
+<span class="kw">public class</span> <span class="cl">ProductsController</span> : <span class="cl">ControllerBase</span> { ... }</pre>
+      </div>
+    </section>
+
+    <!-- ── 21. Auth ── -->
+    <section class="section">
+      <h2 class="sec-title" id="auth">Authentication &amp; Authorisation Basics</h2>
+      <p>ASP.NET Core separates <strong>Authentication</strong> (who are you?) from <strong>Authorisation</strong> (what are you allowed to do?). JWT (JSON Web Token) is the most common approach for Web APIs.</p>
+
+      <div class="code-block">
+        <div class="code-header"><div class="code-dots"><div class="code-dot r"></div><div class="code-dot y"></div><div class="code-dot g"></div></div><span class="code-lang">JWT setup in Program.cs</span></div>
+        <pre>builder.Services.<span class="fn">AddAuthentication</span>(<span class="cl">JwtBearerDefaults</span>.AuthenticationScheme)
+    .<span class="fn">AddJwtBearer</span>(options =>
+    {
+        options.TokenValidationParameters = <span class="kw">new</span> <span class="cl">TokenValidationParameters</span>
+        {
+            ValidateIssuer           = <span class="kw">true</span>,
+            ValidateAudience         = <span class="kw">true</span>,
+            ValidateLifetime         = <span class="kw">true</span>,
+            ValidateIssuerSigningKey = <span class="kw">true</span>,
+            ValidIssuer              = builder.Configuration[<span class="st">"Jwt:Issuer"</span>],
+            ValidAudience            = builder.Configuration[<span class="st">"Jwt:Audience"</span>],
+            IssuerSigningKey         = <span class="kw">new</span> <span class="cl">SymmetricSecurityKey</span>(
+                <span class="cl">Encoding</span>.UTF8.<span class="fn">GetBytes</span>(builder.Configuration[<span class="st">"Jwt:Key"</span>]!))
+        };
+    });</pre>
+      </div>
+
+      <div class="code-block">
+        <div class="code-header"><div class="code-dots"><div class="code-dot r"></div><div class="code-dot y"></div><div class="code-dot g"></div></div><span class="code-lang">Protecting endpoints</span></div>
+        <pre><span class="at">[ApiController]</span>
+<span class="at">[Route("api/[controller]")]</span>
+<span class="at">[Authorize]</span>                          <span class="cm">// ← ALL actions require auth</span>
+<span class="kw">public class</span> <span class="cl">OrdersController</span> : <span class="cl">ControllerBase</span>
+{
+    <span class="at">[HttpGet]</span>
+    <span class="kw">public</span> <span class="cl">IActionResult</span> <span class="fn">GetMyOrders</span>() { ... }
+
+    <span class="at">[HttpGet("admin/all")]</span>
+    <span class="at">[Authorize(Roles = "Admin")]</span>       <span class="cm">// ← only Admin role</span>
+    <span class="kw">public</span> <span class="cl">IActionResult</span> <span class="fn">GetAllOrders</span>() { ... }
+
+    <span class="at">[HttpGet("public-info")]</span>
+    <span class="at">[AllowAnonymous]</span>                   <span class="cm">// ← override — no auth needed</span>
+    <span class="kw">public</span> <span class="cl">IActionResult</span> <span class="fn">PublicInfo</span>() { ... }
+}</pre>
+      </div>
+    </section>
+
+    <!-- ── 22. Summary ── -->
+    <section class="section">
+      <h2 class="sec-title" id="summary">Quick Reference Summary</h2>
+      <div class="tbl-wrap">
+        <table>
+          <thead><tr><th>Concept</th><th>Key Point</th></tr></thead>
+          <tbody>
+            <tr><td><strong>Controller</strong></td><td>Inherits <code>ControllerBase</code>. Decorated with <code>[ApiController]</code> + <code>[Route]</code></td></tr>
+            <tr><td><strong>HTTP Methods</strong></td><td><code>[HttpGet]</code>, <code>[HttpPost]</code>, <code>[HttpPut]</code>, <code>[HttpDelete]</code>, <code>[HttpPatch]</code></td></tr>
+            <tr><td><strong>Routing</strong></td><td>Attribute routing via <code>[Route("api/[controller]")]</code></td></tr>
+            <tr><td><strong>Model Binding</strong></td><td><code>[FromRoute]</code>, <code>[FromQuery]</code>, <code>[FromBody]</code>, <code>[FromHeader]</code></td></tr>
+            <tr><td><strong>Return types</strong></td><td><code>IActionResult</code> or <code>ActionResult&lt;T&gt;</code></td></tr>
+            <tr><td><strong>Status codes</strong></td><td><code>Ok()</code>, <code>Created()</code>, <code>NoContent()</code>, <code>BadRequest()</code>, <code>NotFound()</code></td></tr>
+            <tr><td><strong>DI</strong></td><td>Register in <code>builder.Services</code>. Inject via constructor</td></tr>
+            <tr><td><strong>Lifetimes</strong></td><td>Transient (new each), Scoped (per request), Singleton (app lifetime)</td></tr>
+            <tr><td><strong>Middleware</strong></td><td>Registered in order in <code>Program.cs</code> after <code>builder.Build()</code></td></tr>
+            <tr><td><strong>EF Core</strong></td><td><code>DbContext</code> → <code>DbSet&lt;T&gt;</code> → <code>SaveChangesAsync()</code></td></tr>
+            <tr><td><strong>Validation</strong></td><td>Data annotations on DTOs + <code>[ApiController]</code> = automatic 400</td></tr>
+            <tr><td><strong>Swagger</strong></td><td><code>AddSwaggerGen()</code> + <code>UseSwagger()</code> → <code>/swagger</code></td></tr>
+            <tr><td><strong>CORS</strong></td><td><code>AddCors()</code> + <code>UseCors()</code> — call before UseAuthorization</td></tr>
+            <tr><td><strong>Auth</strong></td><td><code>[Authorize]</code> on controller/action, <code>[AllowAnonymous]</code> to exempt</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+  </main>
+</div>
+
+<script>
+// Sidebar active link on scroll
+const links = document.querySelectorAll('.sidebar-link');
+const observer = new IntersectionObserver(entries => {
+  entries.forEach(entry => {
+    if (entry.isIntersecting) {
+      links.forEach(l => l.classList.remove('active'));
+      const active = document.querySelector(`.sidebar-link[href="#${entry.target.id}"]`);
+      if (active) active.classList.add('active');
+    }
+  });
+}, { rootMargin: '-15% 0px -65% 0px' });
+document.querySelectorAll('h2.sec-title').forEach(el => observer.observe(el));
+
+// Mobile sidebar toggle
+const menuBtn = document.getElementById('menuBtn');
+const sidebar  = document.getElementById('sidebar');
+const overlay  = document.getElementById('overlay');
+function openSidebar()  { sidebar.classList.add('open'); overlay.classList.add('open'); document.body.style.overflow='hidden'; }
+function closeSidebar() { sidebar.classList.remove('open'); overlay.classList.remove('open'); document.body.style.overflow=''; }
+menuBtn.addEventListener('click', () => sidebar.classList.contains('open') ? closeSidebar() : openSidebar());
+overlay.addEventListener('click', closeSidebar);
+// Close sidebar when a link is tapped on mobile
+links.forEach(link => link.addEventListener('click', () => { if (window.innerWidth <= 860) closeSidebar(); }));
+</script>
+</body>
+</html>
